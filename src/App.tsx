@@ -27,12 +27,16 @@ import {
   GripVertical, 
   FileJson,
   Upload,
-  Eye,       // New: For Mobile Preview Toggle
-  EyeOff,    // New: For Mobile Preview Toggle
-  Undo,      // New: For Undo
-  Redo,      // New: For Redo
-  Bold,      // New: For Rich Text
-  List       // New: For Rich Text
+  Eye,       
+  EyeOff,    
+  Undo,      
+  Redo,      
+  Bold,      
+  List,
+  Layers,    // New: For Custom Sections
+  Settings,  // New: For Sliders icon
+  Minus,     // New: For removing sections
+  MoveVertical // New: For spacing icon
 } from 'lucide-react';
 
 // --- Types & Themes ---
@@ -136,7 +140,8 @@ const t = {
       profile: "Profil",
       exp: "Expérience",
       edu: "Formation",
-      skills: "Compétences"
+      skills: "Compétences",
+      custom: "Sections+" // New Tab Name
     },
     design: {
       title: "Design",
@@ -149,7 +154,9 @@ const t = {
       font: "Police",
       fontModern: "Moderne",
       fontClassic: "Classique",
-      stylePro: "Style pro"
+      stylePro: "Style pro",
+      size: "Taille Police",
+      spacing: "Espacement"
     },
     personal: {
       title: "Infos Personnelles",
@@ -198,6 +205,14 @@ const t = {
       hobbyPlaceholder: "Ex: Sport...",
       addHobby: "Ajouter +"
     },
+    custom: { // New Translations
+        addSection: "Ajouter une section",
+        sectionTitle: "Titre de la section",
+        itemTitle: "Titre (ex: Projet X)",
+        itemSubtitle: "Sous-titre (ex: Client Y)",
+        itemDate: "Date / Durée",
+        addItem: "Ajouter un élément"
+    },
     preview: {
       contact: "Contact",
       skills: "Compétences",
@@ -230,7 +245,8 @@ const t = {
       profile: "Profile",
       exp: "Experience",
       edu: "Education",
-      skills: "Skills"
+      skills: "Skills",
+      custom: "Sections+"
     },
     design: {
       title: "Design",
@@ -243,7 +259,9 @@ const t = {
       font: "Font",
       fontModern: "Modern",
       fontClassic: "Classic",
-      stylePro: "Pro Style"
+      stylePro: "Pro Style",
+      size: "Font Size",
+      spacing: "Spacing"
     },
     personal: {
       title: "Personal Info",
@@ -292,6 +310,14 @@ const t = {
       hobbyPlaceholder: "Ex: Sports...",
       addHobby: "Add +"
     },
+    custom: {
+        addSection: "Add Section",
+        sectionTitle: "Section Title",
+        itemTitle: "Title (e.g. Project X)",
+        itemSubtitle: "Subtitle (e.g. Client Y)",
+        itemDate: "Date / Duration",
+        addItem: "Add Item"
+    },
     preview: {
       contact: "Contact",
       skills: "Skills",
@@ -326,6 +352,21 @@ type Education = {
   details: string;
 };
 
+// New Types for Custom Sections
+type CustomItem = {
+    id: string;
+    title: string;
+    subtitle: string;
+    date: string;
+    description: string;
+};
+
+type CustomSection = {
+    id: string;
+    title: string;
+    items: CustomItem[];
+};
+
 type CVData = {
   personal: {
     firstName: string;
@@ -344,6 +385,12 @@ type CVData = {
   skills: string[];
   languages: { lang: string; level: string }[];
   hobbies: string[];
+  // New Fields
+  customSections: CustomSection[];
+  style: {
+      fontSize: number; // Scale factor (e.g., 1.0)
+      spacing: number;  // Scale factor (e.g., 1.0)
+  }
 };
 
 // --- Données Par Défaut (Génériques) ---
@@ -411,7 +458,12 @@ const initialData: CVData = {
     { lang: 'Français', level: 'Courant' },
     { lang: 'Anglais', level: 'Intermédiaire' }
   ],
-  hobbies: ['Sport', 'Vie Associative', 'Lecture', 'Voyages']
+  hobbies: ['Sport', 'Vie Associative', 'Lecture', 'Voyages'],
+  customSections: [],
+  style: {
+      fontSize: 1,
+      spacing: 1
+  }
 };
 
 export default function CVMakerTunisie() {
@@ -432,6 +484,12 @@ export default function CVMakerTunisie() {
     const safeObjectArray = (arr: any) =>
       Array.isArray(arr) ? arr.filter(x => x && typeof x === 'object') : [];
 
+    // Ensure style object exists
+    const safeStyle = parsed.style ? {
+        fontSize: typeof parsed.style.fontSize === 'number' ? parsed.style.fontSize : 1,
+        spacing: typeof parsed.style.spacing === 'number' ? parsed.style.spacing : 1,
+    } : initialData.style;
+
     return {
       ...initialData,
       ...parsed,
@@ -441,6 +499,8 @@ export default function CVMakerTunisie() {
       languages: safeObjectArray(parsed.languages || initialData.languages),
       skills: safeStringArray(parsed.skills || initialData.skills),
       hobbies: safeStringArray(parsed.hobbies || initialData.hobbies),
+      customSections: safeObjectArray(parsed.customSections || []),
+      style: safeStyle
     };
   };
 
@@ -465,9 +525,9 @@ export default function CVMakerTunisie() {
   const [layout, setLayout] = useState<LayoutType>('sidebar-left');
   const [lang, setLang] = useState<Lang>('fr');
   const [isSaved, setIsSaved] = useState(false);
-  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor'); // UX Feature: Mobile Toggle
-  const [history, setHistory] = useState<CVData[]>([]); // UX Feature: Undo/Redo
-  const [historyIndex, setHistoryIndex] = useState(-1); // UX Feature: Undo/Redo
+  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
+  const [history, setHistory] = useState<CVData[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   
   const cvRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -498,7 +558,6 @@ export default function CVMakerTunisie() {
   }, [data]);
 
   // --- UX Feature: Undo/Redo Logic ---
-  // Debounce history updates to avoid saving every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
         setHistory(prev => {
@@ -506,16 +565,15 @@ export default function CVMakerTunisie() {
             if (JSON.stringify(current) !== JSON.stringify(data)) {
                 const newHistory = prev.slice(0, historyIndex + 1);
                 newHistory.push(data);
-                // Keep history size manageable
                 if (newHistory.length > 20) newHistory.shift();
                 setHistoryIndex(newHistory.length - 1);
                 return newHistory;
             }
             return prev;
         });
-    }, 800); // 800ms debounce
+    }, 800);
     return () => clearTimeout(timer);
-  }, [data]); // Trigger when data changes
+  }, [data]);
 
   const handleUndo = () => {
     if (historyIndex > 0) {
@@ -531,11 +589,10 @@ export default function CVMakerTunisie() {
     }
   };
 
-  // --- Helper: Rich Text Parser (UX Feature) ---
+  // --- Helper: Rich Text Parser ---
   const renderRichText = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((line, i) => {
-        // Bullet Point Check
         let content = line;
         let isList = false;
         if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
@@ -543,7 +600,6 @@ export default function CVMakerTunisie() {
             content = line.trim().substring(1).trim();
         }
 
-        // Bold Check: **text**
         const parts = content.split(/(\*\*.*?\*\*)/g);
         const renderedLine = parts.map((part, index) => {
             if (part.startsWith('**') && part.endsWith('**')) {
@@ -643,6 +699,61 @@ export default function CVMakerTunisie() {
     setData(prev => ({ ...prev, languages: newLangs }));
   };
 
+  // --- Handlers for Custom Sections ---
+  const addCustomSection = () => {
+      const newSection: CustomSection = {
+          id: Date.now().toString(),
+          title: "Nouvelle Section",
+          items: []
+      };
+      setData(prev => ({ ...prev, customSections: [...prev.customSections, newSection] }));
+  };
+
+  const removeCustomSection = (id: string) => {
+      setData(prev => ({ ...prev, customSections: prev.customSections.filter(s => s.id !== id) }));
+  };
+
+  const updateCustomSectionTitle = (id: string, newTitle: string) => {
+      setData(prev => ({
+          ...prev,
+          customSections: prev.customSections.map(s => s.id === id ? { ...s, title: newTitle } : s)
+      }));
+  };
+
+  const addCustomItem = (sectionId: string) => {
+      const newItem: CustomItem = {
+          id: Date.now().toString(),
+          title: "",
+          subtitle: "",
+          date: "",
+          description: ""
+      };
+      setData(prev => ({
+          ...prev,
+          customSections: prev.customSections.map(s => s.id === sectionId ? { ...s, items: [...s.items, newItem] } : s)
+      }));
+  };
+
+  const updateCustomItem = (sectionId: string, itemId: string, field: keyof CustomItem, value: string) => {
+      setData(prev => ({
+          ...prev,
+          customSections: prev.customSections.map(s => 
+              s.id === sectionId 
+              ? { ...s, items: s.items.map(i => i.id === itemId ? { ...i, [field]: value } : i) }
+              : s
+          )
+      }));
+  };
+
+  const removeCustomItem = (sectionId: string, itemId: string) => {
+      setData(prev => ({
+          ...prev,
+          customSections: prev.customSections.map(s => 
+              s.id === sectionId ? { ...s, items: s.items.filter(i => i.id !== itemId) } : s
+          )
+      }));
+  };
+
   const handleExportJSON = () => {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
@@ -739,7 +850,6 @@ export default function CVMakerTunisie() {
 
   // --- Sub-Components ---
 
-  // UX Feature: Rich Text Area
   const RichTextArea = ({ 
     value, 
     onChange, 
@@ -761,7 +871,6 @@ export default function CVMakerTunisie() {
         const text = el.value;
         const newText = text.substring(0, start) + before + text.substring(start, end) + after + text.substring(end);
         onChange(newText);
-        // Restore focus
         setTimeout(() => {
             el.focus();
             el.selectionStart = start + before.length;
@@ -772,20 +881,8 @@ export default function CVMakerTunisie() {
     return (
         <div className="border rounded focus-within:ring-2 focus-within:ring-blue-500 bg-white">
             <div className="flex items-center gap-1 border-b bg-gray-50 p-1">
-                <button 
-                    onClick={() => insertText('**', '**')} 
-                    title="Gras"
-                    className="p-1 hover:bg-gray-200 rounded text-gray-600"
-                >
-                    <Bold size={14} />
-                </button>
-                <button 
-                    onClick={() => insertText('• ')} 
-                    title="Liste à puces"
-                    className="p-1 hover:bg-gray-200 rounded text-gray-600"
-                >
-                    <List size={14} />
-                </button>
+                <button onClick={() => insertText('**', '**')} title="Gras" className="p-1 hover:bg-gray-200 rounded text-gray-600"><Bold size={14} /></button>
+                <button onClick={() => insertText('• ')} title="Liste à puces" className="p-1 hover:bg-gray-200 rounded text-gray-600"><List size={14} /></button>
             </div>
             <textarea
                 ref={textAreaRef}
@@ -803,6 +900,13 @@ export default function CVMakerTunisie() {
 
   const translations = t[lang] || t['en'];
 
+  // Style Scaling for Preview
+  // We use CSS variables to handle the scaling cleanly
+  const previewStyle = {
+      '--scale-factor': data.style.fontSize,
+      '--spacing-factor': data.style.spacing,
+  } as React.CSSProperties;
+
   const SidebarContent = () => (
     <>
       <div className="flex justify-center mb-6">
@@ -817,38 +921,13 @@ export default function CVMakerTunisie() {
         </div>
       </div>
 
-      <div className="space-y-4 text-sm">
+      <div className="space-y-4 text-sm" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
         <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.contact}</h3>
-        {data.personal.phone && (
-          <div className="flex items-center gap-3">
-            <div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Phone size={14} /></div>
-            <span>{data.personal.phone}</span>
-          </div>
-        )}
-        {data.personal.email && (
-          <div className="flex items-center gap-3">
-            <div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Mail size={14} /></div>
-            <span className="break-all text-xs">{data.personal.email}</span>
-          </div>
-        )}
-        {data.personal.address && (
-          <div className="flex items-center gap-3">
-            <div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><MapPin size={14} /></div>
-            <span>{data.personal.address}</span>
-          </div>
-        )}
-        {data.personal.linkedin && (
-            <div className="flex items-center gap-3">
-            <div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Linkedin size={14} /></div>
-            <span className="text-xs break-all">{data.personal.linkedin}</span>
-          </div>
-        )}
-        {data.personal.license && (
-            <div className="flex items-center gap-3">
-            <div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Car size={14} /></div>
-            <span>{data.personal.license}</span>
-          </div>
-        )}
+        {data.personal.phone && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Phone size={14} /></div><span>{data.personal.phone}</span></div>}
+        {data.personal.email && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Mail size={14} /></div><span className="break-all text-xs">{data.personal.email}</span></div>}
+        {data.personal.address && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><MapPin size={14} /></div><span>{data.personal.address}</span></div>}
+        {data.personal.linkedin && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Linkedin size={14} /></div><span className="text-xs break-all">{data.personal.linkedin}</span></div>}
+        {data.personal.license && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Car size={14} /></div><span>{data.personal.license}</span></div>}
       </div>
 
       {(data.skills || []).length > 0 && (
@@ -856,7 +935,7 @@ export default function CVMakerTunisie() {
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.skills}</h3>
           <div className="flex flex-wrap gap-2">
             {(data.skills || []).map((skill, idx) => (
-              <span key={idx} className={`${currentTheme.iconBg} text-xs px-2 py-1 rounded`}>
+              <span key={idx} className={`${currentTheme.iconBg} text-xs px-2 py-1 rounded`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
                 {typeof skill === 'string' ? skill : String(skill)}
               </span>
             ))}
@@ -867,7 +946,7 @@ export default function CVMakerTunisie() {
       {(data.languages || []).length > 0 && (
         <div className="space-y-3 mt-6">
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.lang}</h3>
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 text-sm" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.languages || []).map((lang, idx) => (
               <div key={idx} className="flex flex-col">
                 <span className="font-semibold">{lang?.lang || ''}</span>
@@ -881,7 +960,7 @@ export default function CVMakerTunisie() {
       {(data.hobbies || []).length > 0 && (
         <div className="space-y-3 mt-6">
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.hobbies}</h3>
-          <ul className="text-sm list-disc list-inside text-slate-300">
+          <ul className="text-sm list-disc list-inside text-slate-300" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.hobbies || []).map((hobby, idx) => (
               <li key={idx}>
                 {typeof hobby === 'string' ? hobby : String(hobby)}
@@ -895,43 +974,43 @@ export default function CVMakerTunisie() {
 
   const MainContent = () => (
     <>
-      <div className={`mb-8 border-b-2 ${currentTheme.primaryText} pb-4 border-opacity-20`}>
-        <h1 className="text-4xl font-bold uppercase tracking-tight text-slate-900 leading-tight mb-2">
+      <div className={`mb-8 border-b-2 ${currentTheme.primaryText} pb-4 border-opacity-20`} style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+        <h1 className="text-4xl font-bold uppercase tracking-tight text-slate-900 leading-tight mb-2" style={{ fontSize: 'calc(2.25rem * var(--scale-factor))' }}>
           {data.personal.firstName} {data.personal.lastName}
         </h1>
-        <h2 className={`text-xl font-medium ${currentTheme.accentText} tracking-wide uppercase`}>{data.personal.title}</h2>
+        <h2 className={`text-xl font-medium ${currentTheme.accentText} tracking-wide uppercase`} style={{ fontSize: 'calc(1.25rem * var(--scale-factor))' }}>{data.personal.title}</h2>
       </div>
 
       {data.profile && (
-        <div className="mb-8">
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2">
+        <div className="mb-8" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
             <User className={currentTheme.accentText} size={20} /> {translations.preview.profile}
           </h3>
-          <div className="text-sm leading-relaxed text-gray-600 text-justify">
+          <div className="text-sm leading-relaxed text-gray-600 text-justify" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {renderRichText(data.profile)}
           </div>
         </div>
       )}
 
       {(data.experiences || []).length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2">
+        <div className="mb-8" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
             <Briefcase className={currentTheme.accentText} size={20} /> {translations.preview.exp}
           </h3>
-          <div className="space-y-6">
+          <div className="space-y-6" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
             {(data.experiences || []).map((exp, idx) => (
               <div key={idx} className="relative border-l-2 border-gray-200 pl-4 ml-1 break-inside-avoid">
                 <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white ${currentTheme.primaryText.replace('text-', 'bg-')}`}></div>
                 <div className="flex justify-between items-baseline mb-1">
-                  <h4 className="font-bold text-gray-800 text-lg">{exp.poste}</h4>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`}>
+                  <h4 className="font-bold text-gray-800 text-lg" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{exp.poste}</h4>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
                     {formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}
                   </span>
                 </div>
-                <div className="text-sm font-semibold text-gray-600 mb-2">
+                <div className="text-sm font-semibold text-gray-600 mb-2" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                   {exp.entreprise} | {exp.ville}
                 </div>
-                <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
+                <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                   {renderRichText(exp.description)}
                 </div>
               </div>
@@ -941,24 +1020,55 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.education || []).length > 0 && (
-        <div>
-            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2">
+        <div style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
             <GraduationCap className={currentTheme.accentText} size={20} /> {translations.preview.edu}
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-4" style={{ gap: 'calc(1rem * var(--spacing-factor))' }}>
             {(data.education || []).map((edu, idx) => (
               <div key={idx} className="flex justify-between items-start break-inside-avoid">
                   <div>
-                    <h4 className="font-bold text-gray-800">{edu.diplome}</h4>
-                    <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
-                    {edu.details && <div className="text-xs text-gray-500 italic mt-1">{edu.details}</div>}
+                    <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>{edu.diplome}</h4>
+                    <div className="text-sm text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{edu.ecole}, {edu.ville}</div>
+                    {edu.details && <div className="text-xs text-gray-500 italic mt-1" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{edu.details}</div>}
                   </div>
-                  <div className="text-sm font-bold text-gray-500 whitespace-nowrap">{formatDate(edu.annee)}</div>
+                  <div className="text-sm font-bold text-gray-500 whitespace-nowrap" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{formatDate(edu.annee)}</div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* RENDER CUSTOM SECTIONS */}
+      {(data.customSections || []).map((section) => (
+          <div key={section.id} className="break-inside-avoid" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
+                <Layers className={currentTheme.accentText} size={20} /> {section.title}
+              </h3>
+              <div className="space-y-6" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
+                  {section.items.map((item) => (
+                      <div key={item.id} className="break-inside-avoid">
+                          <div className="flex justify-between items-baseline mb-1">
+                              <h4 className="font-bold text-gray-800 text-lg" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{item.title}</h4>
+                              {item.date && (
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
+                                      {item.date}
+                                  </span>
+                              )}
+                          </div>
+                          {item.subtitle && (
+                              <div className="text-sm font-semibold text-gray-600 mb-2" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                                  {item.subtitle}
+                              </div>
+                          )}
+                          <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                              {renderRichText(item.description)}
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      ))}
     </>
   );
 
@@ -980,7 +1090,6 @@ export default function CVMakerTunisie() {
             <h1 className="text-lg font-bold hidden md:block whitespace-nowrap">{translations.appTitle}</h1>
           </div>
           
-          {/* Design Button */}
           <button 
             onClick={() => setActiveTab('design')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold transition-colors border border-blue-700 hover:bg-blue-800 shrink-0 ${activeTab === 'design' ? 'bg-blue-800 ring-2 ring-blue-400' : 'bg-blue-900'}`}
@@ -989,67 +1098,30 @@ export default function CVMakerTunisie() {
             <span className="hidden sm:inline">{translations.customize}</span>
           </button>
 
-          {/* Lang */}
-          <button
-            onClick={() => setLang(prev => prev === 'fr' ? 'en' : 'fr')}
-            className="flex items-center gap-1 bg-blue-800 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-bold hover:bg-blue-700 transition-colors uppercase border border-blue-600 shrink-0"
-          >
+          <button onClick={() => setLang(prev => prev === 'fr' ? 'en' : 'fr')} className="flex items-center gap-1 bg-blue-800 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-bold hover:bg-blue-700 transition-colors uppercase border border-blue-600 shrink-0">
             <Globe size={12} /> {lang}
           </button>
 
-          {/* Undo/Redo Buttons (UX Feature) */}
           <div className="flex gap-1 ml-2 border-l border-blue-800 pl-2">
-            <button 
-                onClick={handleUndo} 
-                disabled={historyIndex <= 0}
-                className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex <= 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                title={translations.actions.undo}
-            >
-                <Undo size={16} />
-            </button>
-            <button 
-                onClick={handleRedo} 
-                disabled={historyIndex >= history.length - 1}
-                className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex >= history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                title={translations.actions.redo}
-            >
-                <Redo size={16} />
-            </button>
+            <button onClick={handleUndo} disabled={historyIndex <= 0} className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex <= 0 ? 'opacity-30 cursor-not-allowed' : ''}`}><Undo size={16} /></button>
+            <button onClick={handleRedo} disabled={historyIndex >= history.length - 1} className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex >= history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}><Redo size={16} /></button>
           </div>
 
-          {/* Mobile Preview Toggle (UX Feature) */}
-          <button 
-            onClick={() => setMobileView(prev => prev === 'editor' ? 'preview' : 'editor')}
-            className="md:hidden ml-2 p-1.5 bg-blue-800 rounded-full hover:bg-blue-700 text-white transition-colors"
-            title="Basculer l'aperçu"
-          >
+          <button onClick={() => setMobileView(prev => prev === 'editor' ? 'preview' : 'editor')} className="md:hidden ml-2 p-1.5 bg-blue-800 rounded-full hover:bg-blue-700 text-white transition-colors">
             {mobileView === 'editor' ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
 
-          {/* Save Indicator */}
-          {isSaved && (
-             <span className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-full animate-fade-in-out flex items-center gap-1 shrink-0 ml-1">
-               <Save size={10} /> <span className="hidden sm:inline">{translations.saved}</span>
-             </span>
-          )}
+          {isSaved && <span className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-full animate-fade-in-out flex items-center gap-1 shrink-0 ml-1"><Save size={10} /> <span className="hidden sm:inline">{translations.saved}</span></span>}
         </div>
 
         <div className="flex gap-2 shrink-0">
-          {/* Desktop Export Buttons */}
           <div className="hidden md:flex gap-1 border-r border-blue-800 pr-2 mr-2">
             <button onClick={handleExportJSON} title={translations.actions.export} className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg transition-colors"><FileJson size={16} /></button>
             <button onClick={handleImportClick} title={translations.actions.import} className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg transition-colors"><Upload size={16} /></button>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
           </div>
-
-          <button onClick={handlePrint} className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold text-sm hidden sm:flex">
-            <Printer size={16} />
-            <span className="hidden md:inline">{translations.print}</span>
-          </button>
-          <button onClick={handleDownloadPDF} disabled={isDownloading} className={`bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold shadow-sm text-xs md:text-sm ${isDownloading ? 'opacity-70 cursor-wait' : ''}`}>
-            {isDownloading ? <Loader className="animate-spin" size={16} /> : <Download size={16} />}
-            <span>{isDownloading ? '...' : translations.download}</span>
-          </button>
+          <button onClick={handlePrint} className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold text-sm hidden sm:flex"><Printer size={16} /><span className="hidden md:inline">{translations.print}</span></button>
+          <button onClick={handleDownloadPDF} disabled={isDownloading} className={`bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold shadow-sm text-xs md:text-sm ${isDownloading ? 'opacity-70 cursor-wait' : ''}`}>{isDownloading ? <Loader className="animate-spin" size={16} /> : <Download size={16} />}<span>{isDownloading ? '...' : translations.download}</span></button>
         </div>
       </header>
 
@@ -1057,15 +1129,14 @@ export default function CVMakerTunisie() {
         
         {/* --- LEFT COLUMN: EDITOR --- */}
         <div className={`w-full lg:w-1/3 bg-white border-r border-gray-200 overflow-y-auto h-[calc(100vh-64px)] print:hidden shadow-lg z-10 flex-col order-1 lg:order-1 ${mobileView === 'preview' ? 'hidden lg:flex' : 'flex'}`}>
-          
           <div className="p-4 bg-blue-50 border-b border-blue-100 text-xs md:text-sm text-blue-800 flex items-start gap-2">
              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
              <p>{translations.tip}</p>
           </div>
           
-          {/* Tabs */}
-          <div className="p-4 border-b border-gray-100 sticky top-0 bg-white z-20 flex gap-2 overflow-x-auto no-scrollbar">
-            {['personal', 'profile', 'exp', 'edu', 'skills'].map(tab => (
+          {/* Tabs Menu - Updated to wrap instead of scroll */}
+          <div className="p-4 border-b border-gray-100 sticky top-0 bg-white z-20 flex flex-wrap gap-2 justify-start">
+            {['personal', 'profile', 'exp', 'edu', 'skills', 'custom'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1086,31 +1157,13 @@ export default function CVMakerTunisie() {
             {/* DESIGN */}
             {activeTab === 'design' && (
                <div className="space-y-6 animate-fadeIn">
-                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                      <Palette size={18} /> {translations.design.title}
-                    </h2>
-                    <button onClick={() => setActiveTab('personal')} className="text-sm text-blue-600 hover:underline">{translations.design.close}</button>
-                 </div>
-
                  {/* Layout */}
                  <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <LayoutTemplate size={16} /> {translations.design.layout}
-                   </h3>
-                   <div className="grid grid-cols-3 gap-2">
-                     <button onClick={() => setLayout('sidebar-left')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-left' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                       <AlignLeft size={24} className="text-gray-600" />
-                       <span className="text-xs font-medium">{translations.design.modern}</span>
-                     </button>
-                     <button onClick={() => setLayout('sidebar-right')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-right' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                       <AlignRight size={24} className="text-gray-600" />
-                       <span className="text-xs font-medium">{translations.design.inverted}</span>
-                     </button>
-                     <button onClick={() => setLayout('classic')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'classic' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                       <Columns size={24} className="text-gray-600 transform rotate-90" />
-                       <span className="text-xs font-medium">{translations.design.classic}</span>
-                     </button>
+                    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><LayoutTemplate size={16} /> {translations.design.layout}</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                     <button onClick={() => setLayout('sidebar-left')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-left' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignLeft size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.modern}</span></button>
+                     <button onClick={() => setLayout('sidebar-right')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-right' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignRight size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.inverted}</span></button>
+                     <button onClick={() => setLayout('classic')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'classic' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><Columns size={24} className="text-gray-600 transform rotate-90" /><span className="text-xs font-medium">{translations.design.classic}</span></button>
                    </div>
                  </div>
                  
@@ -1121,45 +1174,58 @@ export default function CVMakerTunisie() {
                      {themes.map((theme) => (
                        <button key={theme.id} onClick={() => setCurrentTheme(theme)} className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${currentTheme.id === theme.id ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
                          <div className="w-10 h-10 rounded-full shadow-sm" style={{ backgroundColor: theme.sidebarHex }}></div>
-                         <div className="text-left">
-                           <div className="font-semibold text-gray-800">{theme.name}</div>
-                           <div className="text-xs text-gray-500">{translations.design.stylePro}</div>
-                         </div>
+                         <div className="text-left"><div className="font-semibold text-gray-800">{theme.name}</div><div className="text-xs text-gray-500">{translations.design.stylePro}</div></div>
                        </button>
                      ))}
                    </div>
                  </div>
 
+                 {/* Advanced Customization (Sliders) */}
+                 <div className="space-y-4 pt-2 border-t border-gray-100">
+                    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Settings size={16} /> Personnalisation</h3>
+                    
+                    {/* Font Size Slider */}
+                    <div>
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span className="flex items-center gap-1"><Type size={12}/> {translations.design.size}</span>
+                            <span>{Math.round(data.style.fontSize * 100)}%</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0.8" 
+                            max="1.3" 
+                            step="0.05" 
+                            value={data.style.fontSize} 
+                            onChange={(e) => setData(prev => ({ ...prev, style: { ...prev.style, fontSize: parseFloat(e.target.value) } }))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                    </div>
+
+                    {/* Spacing Slider */}
+                    <div>
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span className="flex items-center gap-1"><MoveVertical size={12}/> {translations.design.spacing}</span>
+                            <span>{Math.round(data.style.spacing * 100)}%</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0.8" 
+                            max="2.0" 
+                            step="0.1" 
+                            value={data.style.spacing} 
+                            onChange={(e) => setData(prev => ({ ...prev, style: { ...prev.style, spacing: parseFloat(e.target.value) } }))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                    </div>
+                 </div>
+
                  {/* Font */}
                  <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <Type size={16} /> {translations.design.font}
-                   </h3>
-                   <div className="grid grid-cols-2 gap-3">
-                     <button onClick={() => setFontStyle('sans')} className={`p-3 rounded-lg border-2 text-center transition-all font-sans ${fontStyle === 'sans' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                       <span className="text-xl font-bold block mb-1">Ag</span>
-                       {translations.design.fontModern}
-                     </button>
-                     <button onClick={() => setFontStyle('serif')} className={`p-3 rounded-lg border-2 text-center transition-all font-serif ${fontStyle === 'serif' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                       <span className="text-xl font-bold block mb-1">Ag</span>
-                       {translations.design.fontClassic}
-                     </button>
+                    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Type size={16} /> {translations.design.font}</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                     <button onClick={() => setFontStyle('sans')} className={`p-3 rounded-lg border-2 text-center transition-all font-sans ${fontStyle === 'sans' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><span className="text-xl font-bold block mb-1">Ag</span>{translations.design.fontModern}</button>
+                     <button onClick={() => setFontStyle('serif')} className={`p-3 rounded-lg border-2 text-center transition-all font-serif ${fontStyle === 'serif' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><span className="text-xl font-bold block mb-1">Ag</span>{translations.design.fontClassic}</button>
                    </div>
-                 </div>
-                 
-                 {/* Mobile Export */}
-                 <div className="md:hidden space-y-3 pt-4 border-t">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Save size={16} /> Sauvegarde</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button onClick={handleExportJSON} className="p-2 border rounded flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100">
-                            <FileJson size={20} className="text-blue-600"/>
-                            <span className="text-xs">{translations.actions.export}</span>
-                        </button>
-                        <button onClick={handleImportClick} className="p-2 border rounded flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100">
-                            <Upload size={20} className="text-green-600"/>
-                            <span className="text-xs">{translations.actions.import}</span>
-                        </button>
-                    </div>
                  </div>
                </div>
             )}
@@ -1167,9 +1233,7 @@ export default function CVMakerTunisie() {
             {/* PERSONAL */}
             {activeTab === 'personal' && (
               <div className="space-y-4 animate-fadeIn">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <User size={18} /> {translations.personal.title}
-                </h2>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><User size={18} /> {translations.personal.title}</h2>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <input name="firstName" placeholder={translations.personal.firstName} value={data.personal.firstName} onChange={handlePersonalChange} className="p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none w-full" />
@@ -1194,41 +1258,19 @@ export default function CVMakerTunisie() {
             {/* PROFILE */}
             {activeTab === 'profile' && (
               <div className="space-y-4 animate-fadeIn">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <FileText size={18} /> {translations.profile.title}
-                </h2>
-                {/* UX Feature: Rich Text Area */}
-                <RichTextArea 
-                    value={data.profile} 
-                    onChange={(val) => setData(prev => ({...prev, profile: val}))}
-                    placeholder={translations.profile.placeholder}
-                    rows={6}
-                />
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><FileText size={18} /> {translations.profile.title}</h2>
+                <RichTextArea value={data.profile} onChange={(val) => setData(prev => ({...prev, profile: val}))} placeholder={translations.profile.placeholder} rows={6}/>
               </div>
             )}
 
             {/* EXP */}
             {activeTab === 'exp' && (
               <div className="space-y-4 animate-fadeIn">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <Briefcase size={18} /> {translations.exp.title}
-                </h2>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Briefcase size={18} /> {translations.exp.title}</h2>
                 {(data.experiences || []).map((exp, idx) => (
-                  <div 
-                    key={exp.id} 
-                    className="p-4 border rounded bg-gray-50 relative group transition-colors hover:border-blue-300"
-                    draggable
-                    onDragStart={(e) => onDragStart(e, idx)}
-                    onDragEnter={(e) => onDragEnter(e, idx)}
-                    onDragEnd={() => onDragEnd('experiences')}
-                    onDragOver={(e) => e.preventDefault()}
-                  >
-                    <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 bg-white border rounded shadow-sm p-1 cursor-move opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-400 hover:text-blue-500">
-                        <GripVertical size={16} />
-                    </div>
-                    <button onClick={() => removeItem('experiences', exp.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 z-10">
-                      <Trash2 size={16} />
-                    </button>
+                  <div key={exp.id} className="p-4 border rounded bg-gray-50 relative group transition-colors hover:border-blue-300" draggable onDragStart={(e) => onDragStart(e, idx)} onDragEnter={(e) => onDragEnter(e, idx)} onDragEnd={() => onDragEnd('experiences')} onDragOver={(e) => e.preventDefault()}>
+                    <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 bg-white border rounded shadow-sm p-1 cursor-move opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-400 hover:text-blue-500"><GripVertical size={16} /></div>
+                    <button onClick={() => removeItem('experiences', exp.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 z-10"><Trash2 size={16} /></button>
                     <div className="space-y-2">
                       <input placeholder={translations.exp.role} value={exp.poste} onChange={(e) => updateItem('experiences', exp.id, 'poste', e.target.value)} className="w-full p-1 border rounded" />
                       <input placeholder={translations.exp.company} value={exp.entreprise} onChange={(e) => updateItem('experiences', exp.id, 'entreprise', e.target.value)} className="w-full p-1 border rounded" />
@@ -1237,43 +1279,22 @@ export default function CVMakerTunisie() {
                           <input placeholder={translations.exp.end} value={exp.dateFin} onChange={(e) => updateItem('experiences', exp.id, 'dateFin', e.target.value)} className="p-1 border rounded" />
                       </div>
                       <input placeholder={translations.exp.city} value={exp.ville} onChange={(e) => updateItem('experiences', exp.id, 'ville', e.target.value)} className="w-full p-1 border rounded" />
-                      {/* UX Feature: Rich Text Area */}
-                      <RichTextArea 
-                        value={exp.description} 
-                        onChange={(val) => updateItem('experiences', exp.id, 'description', val)}
-                        placeholder={translations.exp.desc}
-                      />
+                      <RichTextArea value={exp.description} onChange={(val) => updateItem('experiences', exp.id, 'description', val)} placeholder={translations.exp.desc}/>
                     </div>
                   </div>
                 ))}
-                <button onClick={() => addItem('experiences', { id: Date.now().toString(), poste: '', entreprise: '', ville: '', dateDebut: '', dateFin: '', description: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2">
-                  <Plus size={16} /> {translations.exp.add}
-                </button>
+                <button onClick={() => addItem('experiences', { id: Date.now().toString(), poste: '', entreprise: '', ville: '', dateDebut: '', dateFin: '', description: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2"><Plus size={16} /> {translations.exp.add}</button>
               </div>
             )}
 
             {/* EDU */}
             {activeTab === 'edu' && (
               <div className="space-y-4 animate-fadeIn">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <GraduationCap size={18} /> {translations.edu.title}
-                </h2>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><GraduationCap size={18} /> {translations.edu.title}</h2>
                 {(data.education || []).map((edu, idx) => (
-                  <div 
-                    key={edu.id} 
-                    className="p-4 border rounded bg-gray-50 relative group transition-colors hover:border-blue-300"
-                    draggable
-                    onDragStart={(e) => onDragStart(e, idx)}
-                    onDragEnter={(e) => onDragEnter(e, idx)}
-                    onDragEnd={() => onDragEnd('education')}
-                    onDragOver={(e) => e.preventDefault()}
-                  >
-                    <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 bg-white border rounded shadow-sm p-1 cursor-move opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-400 hover:text-blue-500">
-                        <GripVertical size={16} />
-                    </div>
-                    <button onClick={() => removeItem('education', edu.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 z-10">
-                      <Trash2 size={16} />
-                    </button>
+                  <div key={edu.id} className="p-4 border rounded bg-gray-50 relative group transition-colors hover:border-blue-300" draggable onDragStart={(e) => onDragStart(e, idx)} onDragEnter={(e) => onDragEnter(e, idx)} onDragEnd={() => onDragEnd('education')} onDragOver={(e) => e.preventDefault()}>
+                    <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 bg-white border rounded shadow-sm p-1 cursor-move opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-400 hover:text-blue-500"><GripVertical size={16} /></div>
+                    <button onClick={() => removeItem('education', edu.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 z-10"><Trash2 size={16} /></button>
                     <div className="space-y-2">
                       <input placeholder={translations.edu.degree} value={edu.diplome} onChange={(e) => updateItem('education', edu.id, 'diplome', e.target.value)} className="w-full p-1 border rounded" />
                       <input placeholder={translations.edu.school} value={edu.ecole} onChange={(e) => updateItem('education', edu.id, 'ecole', e.target.value)} className="w-full p-1 border rounded" />
@@ -1285,9 +1306,7 @@ export default function CVMakerTunisie() {
                     </div>
                   </div>
                 ))}
-                <button onClick={() => addItem('education', { id: Date.now().toString(), diplome: '', ecole: '', ville: '', annee: '', details: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2">
-                  <Plus size={16} /> {translations.edu.add}
-                </button>
+                <button onClick={() => addItem('education', { id: Date.now().toString(), diplome: '', ecole: '', ville: '', annee: '', details: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2"><Plus size={16} /> {translations.edu.add}</button>
               </div>
             )}
 
@@ -1304,7 +1323,6 @@ export default function CVMakerTunisie() {
                   ))}
                   <button onClick={() => addArrayString('skills')} className="text-sm text-blue-600 flex items-center gap-1 hover:underline"><Plus size={14} /> {translations.skills.addSkill}</button>
                 </div>
-
                 <div className="space-y-2 pt-4 border-t">
                   <h3 className="font-semibold text-gray-700">{translations.skills.langTitle}</h3>
                   {(data.languages || []).map((lang, idx) => (
@@ -1316,7 +1334,6 @@ export default function CVMakerTunisie() {
                   ))}
                   <button onClick={addLanguage} className="text-sm text-blue-600 flex items-center gap-1 hover:underline"><Plus size={14} /> {translations.skills.addLang}</button>
                 </div>
-
                 <div className="space-y-2 pt-4 border-t">
                   <h3 className="font-semibold text-gray-700">{translations.skills.hobbyTitle}</h3>
                   {(data.hobbies || []).map((hobby, idx) => (
@@ -1328,6 +1345,74 @@ export default function CVMakerTunisie() {
                   <button onClick={() => addArrayString('hobbies')} className="text-sm text-blue-600 flex items-center gap-1 hover:underline"><Plus size={14} /> {translations.skills.addHobby}</button>
                 </div>
               </div>
+            )}
+
+            {/* NEW TAB: CUSTOM SECTIONS */}
+            {activeTab === 'custom' && (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Layers size={18} /> {translations.tabs.custom}</h2>
+                    
+                    {(data.customSections || []).map(section => (
+                        <div key={section.id} className="border rounded-lg p-4 bg-gray-50 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <input 
+                                    className="font-bold text-gray-800 bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 outline-none w-full"
+                                    value={section.title}
+                                    onChange={(e) => updateCustomSectionTitle(section.id, e.target.value)}
+                                    placeholder={translations.custom.sectionTitle}
+                                />
+                                <button onClick={() => removeCustomSection(section.id)} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {section.items.map(item => (
+                                    <div key={item.id} className="p-3 bg-white border rounded shadow-sm space-y-2 relative group">
+                                        <button onClick={() => removeCustomItem(section.id, item.id)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500"><Minus size={16} /></button>
+                                        <input 
+                                            className="w-full p-1 border-b text-sm font-semibold" 
+                                            placeholder={translations.custom.itemTitle}
+                                            value={item.title}
+                                            onChange={(e) => updateCustomItem(section.id, item.id, 'title', e.target.value)}
+                                        />
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input 
+                                                className="p-1 border-b text-xs" 
+                                                placeholder={translations.custom.itemSubtitle}
+                                                value={item.subtitle}
+                                                onChange={(e) => updateCustomItem(section.id, item.id, 'subtitle', e.target.value)}
+                                            />
+                                            <input 
+                                                className="p-1 border-b text-xs" 
+                                                placeholder={translations.custom.itemDate}
+                                                value={item.date}
+                                                onChange={(e) => updateCustomItem(section.id, item.id, 'date', e.target.value)}
+                                            />
+                                        </div>
+                                        <RichTextArea 
+                                            value={item.description}
+                                            onChange={(val) => updateCustomItem(section.id, item.id, 'description', val)}
+                                            placeholder="Description..."
+                                            rows={2}
+                                        />
+                                    </div>
+                                ))}
+                                <button 
+                                    onClick={() => addCustomItem(section.id)} 
+                                    className="w-full py-1.5 border border-dashed border-blue-300 text-blue-500 rounded text-sm hover:bg-blue-50 flex justify-center items-center gap-1"
+                                >
+                                    <Plus size={14} /> {translations.custom.addItem}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+
+                    <button 
+                        onClick={addCustomSection} 
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex justify-center items-center gap-2 shadow-sm"
+                    >
+                        <Plus size={18} /> {translations.custom.addSection}
+                    </button>
+                </div>
             )}
           </div>
 
@@ -1343,7 +1428,7 @@ export default function CVMakerTunisie() {
             <div 
               ref={cvRef}
               className={`w-[210mm] min-h-[297mm] flex ${layout === 'classic' ? 'flex-col' : (layout === 'sidebar-right' ? 'flex-row-reverse' : 'flex-row')} relative bg-white ${fontStyle === 'serif' ? 'font-serif' : 'font-sans'}`}
-              style={{ background: pdfBackground }}
+              style={{ background: pdfBackground, ...previewStyle }}
             >
               {layout === 'classic' ? (
                 <div className="w-full flex flex-col h-full min-h-[297mm]">
@@ -1353,9 +1438,9 @@ export default function CVMakerTunisie() {
                         {data.personal.photo ? <img src={data.personal.photo} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-4xl text-white font-bold">{(data.personal.firstName || ' ')[0]}{(data.personal.lastName || ' ')[0]}</span>}
                       </div>
                     </div>
-                    <h1 className="text-4xl font-bold uppercase tracking-tight leading-tight mb-2">{data.personal.firstName} {data.personal.lastName}</h1>
-                    <h2 className="text-xl font-medium tracking-wide uppercase opacity-90">{data.personal.title}</h2>
-                    <div className="flex flex-wrap justify-center gap-6 mt-6 text-sm opacity-90">
+                    <h1 className="text-4xl font-bold uppercase tracking-tight leading-tight mb-2" style={{ fontSize: 'calc(2.25rem * var(--scale-factor))' }}>{data.personal.firstName} {data.personal.lastName}</h1>
+                    <h2 className="text-xl font-medium tracking-wide uppercase opacity-90" style={{ fontSize: 'calc(1.25rem * var(--scale-factor))' }}>{data.personal.title}</h2>
+                    <div className="flex flex-wrap justify-center gap-6 mt-6 text-sm opacity-90" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                        {data.personal.phone && <div className="flex items-center gap-2"><Phone size={14} /> <span>{data.personal.phone}</span></div>}
                        {data.personal.email && <div className="flex items-center gap-2"><Mail size={14} /> <span>{data.personal.email}</span></div>}
                        {data.personal.address && <div className="flex items-center gap-2"><MapPin size={14} /> <span>{data.personal.address}</span></div>}
@@ -1363,58 +1448,10 @@ export default function CVMakerTunisie() {
                   </div>
                   <div className="p-8 grid grid-cols-12 gap-8 text-gray-800 flex-1">
                       <div className="col-span-8 space-y-8">
-                        {data.profile && <div><h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.profile}</h3><div className="text-sm leading-relaxed text-gray-600 text-justify">{renderRichText(data.profile)}</div></div>}
-                        {(data.experiences || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.exp}</h3>
-                            <div className="space-y-6">
-                              {(data.experiences || []).map((exp, idx) => (
-                                <div key={idx} className="break-inside-avoid">
-                                  <div className="flex justify-between items-baseline mb-1">
-                                    <h4 className="font-bold text-gray-800 text-lg">{exp.poste}</h4>
-                                    <span className="text-xs font-semibold text-gray-500 italic">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
-                                  </div>
-                                  <div className={`text-sm font-semibold ${currentTheme.accentText} mb-2`}>{exp.entreprise}, {exp.ville}</div>
-                                  <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{renderRichText(exp.description)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {(data.education || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.edu}</h3>
-                            <div className="space-y-4">
-                              {(data.education || []).map((edu, idx) => (
-                                <div key={idx} className="break-inside-avoid">
-                                  <div className="flex justify-between items-baseline"><h4 className="font-bold text-gray-800">{edu.diplome}</h4><span className="text-sm font-bold text-gray-500">{formatDate(edu.annee)}</span></div>
-                                  <div className={`text-sm ${currentTheme.accentText}`}>{edu.ecole}, {edu.ville}</div>
-                                  {edu.details && <div className="text-xs text-gray-500 italic mt-1">{edu.details}</div>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <MainContent />
                       </div>
                       <div className="col-span-4 space-y-8 border-l border-gray-100 pl-8">
-                         {(data.skills || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.skills}</h3>
-                            <div className="flex flex-wrap gap-2">{(data.skills || []).map((skill, idx) => <span key={idx} className={`bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded`}>{typeof skill === 'string' ? skill : String(skill)}</span>)}</div>
-                          </div>
-                        )}
-                        {(data.languages || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.lang}</h3>
-                            <ul className="space-y-2 text-sm">{(data.languages || []).map((lang, idx) => <li key={idx} className="flex justify-between border-b border-gray-100 pb-1 last:border-0"><span className="font-semibold">{lang.lang}</span><span className="text-gray-500">{lang.level}</span></li>)}</ul>
-                          </div>
-                        )}
-                        {(data.hobbies || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.hobbies}</h3>
-                            <ul className="text-sm list-disc list-inside text-gray-600 space-y-1">{(data.hobbies || []).map((hobby, idx) => <li key={idx}>{typeof hobby === 'string' ? hobby : String(hobby)}</li>)}</ul>
-                          </div>
-                        )}
+                         <SidebarContent />
                       </div>
                   </div>
                 </div>
