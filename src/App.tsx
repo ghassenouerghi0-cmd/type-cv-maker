@@ -37,9 +37,14 @@ import {
   Settings,  
   Minus,     
   MoveVertical,
-  ZoomIn,   // New: Zoom In
-  ZoomOut,  // New: Zoom Out
-  Maximize  // New: Fit Screen
+  ZoomIn,   
+  ZoomOut,  
+  Maximize,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  AlignJustify,
+  AlignCenter
 } from 'lucide-react';
 
 // --- Types & Themes ---
@@ -119,7 +124,7 @@ const themes: Theme[] = [
   }
 ];
 
-type LayoutType = 'sidebar-left' | 'sidebar-right' | 'classic';
+type LayoutType = 'sidebar-left' | 'sidebar-right' | 'classic' | 'executive' | 'elegant';
 type Lang = 'fr' | 'en';
 
 // --- Translations ---
@@ -137,7 +142,8 @@ const t = {
         undo: "Annuler",
         redo: "Rétablir",
         preview: "Aperçu",
-        fit: "Adapter"
+        fit: "Adapter",
+        score: "Score CV"
     },
     tabs: {
       personal: "Infos",
@@ -154,6 +160,8 @@ const t = {
       modern: "Moderne",
       inverted: "Inversé",
       classic: "Classique",
+      executive: "Exécutif",
+      elegant: "Élégant",
       theme: "Thème",
       font: "Police",
       fontModern: "Moderne",
@@ -243,7 +251,8 @@ const t = {
         undo: "Undo",
         redo: "Redo",
         preview: "Preview",
-        fit: "Fit Screen"
+        fit: "Fit Screen",
+        score: "CV Score"
     },
     tabs: {
       personal: "Info",
@@ -260,6 +269,8 @@ const t = {
       modern: "Modern",
       inverted: "Inverted",
       classic: "Classic",
+      executive: "Executive",
+      elegant: "Elegant",
       theme: "Theme",
       font: "Font",
       fontModern: "Modern",
@@ -468,8 +479,50 @@ const initialData: CVData = {
   }
 };
 
+// --- ATS Analysis Logic ---
+const analyzeCV = (data: CVData) => {
+    let score = 100;
+    const feedback: { type: 'success' | 'error', msg: string }[] = [];
+
+    if (!data.personal.email || !data.personal.phone) {
+        score -= 10;
+        feedback.push({ type: 'error', msg: "Email ou téléphone manquant." });
+    }
+    if (!data.personal.linkedin) {
+        score -= 5;
+        feedback.push({ type: 'error', msg: "Ajoutez un lien LinkedIn pour plus de visibilité." });
+    }
+    if (!data.profile || data.profile.length < 50) {
+        score -= 10;
+        feedback.push({ type: 'error', msg: "Le profil est trop court. Visez 2-3 phrases." });
+    }
+    if (data.experiences.length === 0) {
+        score -= 20;
+        feedback.push({ type: 'error', msg: "Aucune expérience listée. Ajoutez au moins un stage ou projet." });
+    } else {
+        const actionVerbs = ['géré', 'créé', 'développé', 'managed', 'created', 'developed', 'lead', 'dirigé', 'augmenté'];
+        const hasActionVerbs = data.experiences.some(exp => 
+            actionVerbs.some(verb => exp.description.toLowerCase().includes(verb))
+        );
+        if (!hasActionVerbs) {
+            score -= 10;
+            feedback.push({ type: 'error', msg: "Utilisez des verbes d'action (ex: Géré, Créé) dans vos expériences." });
+        } else {
+            feedback.push({ type: 'success', msg: "Bonne utilisation de verbes d'action !" });
+        }
+    }
+    if (data.skills.length < 3) {
+        score -= 10;
+        feedback.push({ type: 'error', msg: "Ajoutez plus de compétences techniques (Hard Skills)." });
+    }
+    if (data.style.fontSize < 0.9) {
+        feedback.push({ type: 'error', msg: "La police est un peu petite. Attention à la lisibilité." });
+    }
+
+    return { score: Math.max(0, score), feedback };
+};
+
 export default function CVMakerTunisie() {
-  // --- Helper: Data Sanitizer ---
   const sanitizeData = (parsed: any): CVData => {
     if (!parsed || typeof parsed !== 'object') return initialData;
 
@@ -505,7 +558,6 @@ export default function CVMakerTunisie() {
     };
   };
 
-  // --- 1. Robust Initialization ---
   const [data, setData] = useState<CVData>(() => {
     try {
       const savedData = localStorage.getItem('cv_data_v2'); 
@@ -518,7 +570,6 @@ export default function CVMakerTunisie() {
     return initialData;
   });
 
-  // --- UX States ---
   const [activeTab, setActiveTab] = useState('personal');
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
@@ -530,13 +581,13 @@ export default function CVMakerTunisie() {
   const [history, setHistory] = useState<CVData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [previewScale, setPreviewScale] = useState(1);
+  const [showScore, setShowScore] = useState(false);
   
   const cvRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<any>(null);
   const dragOverItem = useRef<any>(null);
 
-  // --- Load External PDF Lib ---
   useEffect(() => {
     const script = document.createElement('script');
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
@@ -547,7 +598,6 @@ export default function CVMakerTunisie() {
     }
   }, []);
 
-  // --- Auto-Save ---
   useEffect(() => {
     if (data) {
       const timer = setTimeout(() => {
@@ -559,10 +609,8 @@ export default function CVMakerTunisie() {
     }
   }, [data]);
 
-  // --- Auto Scale Logic (Fix for Mobile) ---
   const fitToScreen = useCallback(() => {
     if (window.innerWidth < 1024) {
-      // 210mm is approx 794px. We add 40px buffer for margins.
       const scale = (window.innerWidth - 40) / 794;
       setPreviewScale(Math.min(scale, 1));
     } else {
@@ -570,24 +618,20 @@ export default function CVMakerTunisie() {
     }
   }, []);
 
-  // Recalculate scale when switching to preview on mobile
   useEffect(() => {
     if (mobileView === 'preview') {
       fitToScreen();
     }
   }, [mobileView, fitToScreen]);
 
-  // Resize listener
   useEffect(() => {
     window.addEventListener('resize', fitToScreen);
     return () => window.removeEventListener('resize', fitToScreen);
   }, [fitToScreen]);
 
-  // Zoom handlers
   const handleZoomIn = () => setPreviewScale(prev => Math.min(prev + 0.1, 2));
   const handleZoomOut = () => setPreviewScale(prev => Math.max(prev - 0.1, 0.3));
 
-  // --- UX Feature: Undo/Redo Logic ---
   useEffect(() => {
     const timer = setTimeout(() => {
         setHistory(prev => {
@@ -619,7 +663,6 @@ export default function CVMakerTunisie() {
     }
   };
 
-  // --- Helper: Rich Text Parser ---
   const renderRichText = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((line, i) => {
@@ -650,7 +693,6 @@ export default function CVMakerTunisie() {
     });
   };
 
-  // --- Helper: Format Date ---
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     if (dateString.length === 4) return dateString;
@@ -666,7 +708,6 @@ export default function CVMakerTunisie() {
     }
   };
 
-  // --- Handlers ---
   const handlePersonalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setData(prev => ({ ...prev, personal: { ...prev.personal, [name]: value } }));
@@ -729,7 +770,6 @@ export default function CVMakerTunisie() {
     setData(prev => ({ ...prev, languages: newLangs }));
   };
 
-  // --- Handlers for Custom Sections ---
   const addCustomSection = () => {
       const newSection: CustomSection = {
           id: Date.now().toString(),
@@ -878,8 +918,6 @@ export default function CVMakerTunisie() {
     }
   };
 
-  // --- Sub-Components ---
-
   const RichTextArea = ({ 
     value, 
     onChange, 
@@ -926,6 +964,36 @@ export default function CVMakerTunisie() {
     );
   };
 
+  const ScoreCard = ({ data, onClose }: { data: CVData, onClose: () => void }) => {
+      const { score, feedback } = analyzeCV(data);
+      return (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-fadeIn">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+                  <div className="bg-blue-600 p-6 text-white text-center">
+                      <div className="text-5xl font-bold mb-2">{score}</div>
+                      <div className="text-blue-100 uppercase tracking-widest text-sm font-semibold">Score ATS</div>
+                  </div>
+                  <div className="p-6 max-h-[60vh] overflow-y-auto">
+                      <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><TrendingUp /> Analyse</h3>
+                      <div className="space-y-3">
+                          {feedback.map((item, idx) => (
+                              <div key={idx} className={`flex gap-3 p-3 rounded-lg text-sm ${item.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                                  <div className="shrink-0 mt-0.5">
+                                      {item.type === 'success' ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                                  </div>
+                                  <span>{item.msg}</span>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <div className="p-4 border-t bg-gray-50 flex justify-end">
+                      <button onClick={onClose} className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700">Fermer</button>
+                  </div>
+              </div>
+          </div>
+      );
+  };
+
   if (!data) return <div className="min-h-screen flex items-center justify-center bg-gray-100"><Loader className="animate-spin text-blue-600" size={32} /></div>;
 
   const translations = t[lang] || t['en'];
@@ -936,6 +1004,7 @@ export default function CVMakerTunisie() {
       '--spacing-factor': data.style.spacing,
   } as React.CSSProperties;
 
+  // --- COMPONENT: Sidebar Content (Reusable) ---
   const SidebarContent = () => (
     <>
       <div className="flex justify-center mb-6">
@@ -1001,15 +1070,9 @@ export default function CVMakerTunisie() {
     </>
   );
 
-  const MainContent = () => (
+  // --- COMPONENT: Main Content (Reusable) ---
+  const MainContentBody = () => (
     <>
-      <div className={`mb-8 border-b-2 ${currentTheme.primaryText} pb-4 border-opacity-20`} style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
-        <h1 className="text-4xl font-bold uppercase tracking-tight text-slate-900 leading-tight mb-2" style={{ fontSize: 'calc(2.25rem * var(--scale-factor))' }}>
-          {data.personal.firstName} {data.personal.lastName}
-        </h1>
-        <h2 className={`text-xl font-medium ${currentTheme.accentText} tracking-wide uppercase`} style={{ fontSize: 'calc(1.25rem * var(--scale-factor))' }}>{data.personal.title}</h2>
-      </div>
-
       {data.profile && (
         <div className="mb-8" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
           <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
@@ -1104,7 +1167,7 @@ export default function CVMakerTunisie() {
   let pdfBackground = `linear-gradient(to right, ${currentTheme.sidebarHex} 32%, #ffffff 32%)`;
   if (layout === 'sidebar-right') {
     pdfBackground = `linear-gradient(to left, ${currentTheme.sidebarHex} 32%, #ffffff 32%)`;
-  } else if (layout === 'classic') {
+  } else if (layout === 'classic' || layout === 'executive' || layout === 'elegant') {
     pdfBackground = '#ffffff'; 
   }
 
@@ -1136,6 +1199,10 @@ export default function CVMakerTunisie() {
             <button onClick={handleRedo} disabled={historyIndex >= history.length - 1} className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex >= history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}><Redo size={16} /></button>
           </div>
 
+          <button onClick={() => setShowScore(true)} className="ml-2 p-1.5 bg-green-500 rounded-full hover:bg-green-600 text-white transition-colors" title={translations.actions.score}>
+            <CheckCircle size={18} />
+          </button>
+
           <button onClick={() => setMobileView(prev => prev === 'editor' ? 'preview' : 'editor')} className="md:hidden ml-2 p-1.5 bg-blue-800 rounded-full hover:bg-blue-700 text-white transition-colors">
             {mobileView === 'editor' ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
@@ -1153,6 +1220,8 @@ export default function CVMakerTunisie() {
           <button onClick={handleDownloadPDF} disabled={isDownloading} className={`bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold shadow-sm text-xs md:text-sm ${isDownloading ? 'opacity-70 cursor-wait' : ''}`}>{isDownloading ? <Loader className="animate-spin" size={16} /> : <Download size={16} />}<span>{isDownloading ? '...' : translations.download}</span></button>
         </div>
       </header>
+
+      {showScore && <ScoreCard data={data} onClose={() => setShowScore(false)} />}
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         
@@ -1189,10 +1258,12 @@ export default function CVMakerTunisie() {
                  {/* Layout */}
                  <div className="space-y-3">
                     <h3 className="font-semibold text-gray-700 flex items-center gap-2"><LayoutTemplate size={16} /> {translations.design.layout}</h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                      <button onClick={() => setLayout('sidebar-left')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-left' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignLeft size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.modern}</span></button>
                      <button onClick={() => setLayout('sidebar-right')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'sidebar-right' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignRight size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.inverted}</span></button>
                      <button onClick={() => setLayout('classic')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'classic' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><Columns size={24} className="text-gray-600 transform rotate-90" /><span className="text-xs font-medium">{translations.design.classic}</span></button>
+                     <button onClick={() => setLayout('executive')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'executive' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignJustify size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.executive}</span></button>
+                     <button onClick={() => setLayout('elegant')} className={`p-3 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-2 ${layout === 'elegant' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}><AlignCenter size={24} className="text-gray-600" /><span className="text-xs font-medium">{translations.design.elegant}</span></button>
                    </div>
                  </div>
                  
@@ -1238,8 +1309,8 @@ export default function CVMakerTunisie() {
                         </div>
                         <input 
                             type="range" 
-                            min="0.8" 
-                            max="2.0" 
+                            min="0.6" // LOWER MINIMUM
+                            max="1.6" 
                             step="0.1" 
                             value={data.style.spacing} 
                             onChange={(e) => setData(prev => ({ ...prev, style: { ...prev.style, spacing: parseFloat(e.target.value) } }))}
@@ -1442,7 +1513,7 @@ export default function CVMakerTunisie() {
 
             <div 
               ref={cvRef}
-              className={`w-[210mm] min-h-[297mm] flex ${layout === 'classic' ? 'flex-col' : (layout === 'sidebar-right' ? 'flex-row-reverse' : 'flex-row')} relative bg-white ${fontStyle === 'serif' ? 'font-serif' : 'font-sans'}`}
+              className={`w-[210mm] min-h-[297mm] flex ${layout === 'classic' ? 'flex-col' : (layout === 'sidebar-right' ? 'flex-row-reverse' : (layout === 'executive' ? 'flex-col' : (layout === 'elegant' ? 'flex-col' : 'flex-row')))} relative bg-white ${fontStyle === 'serif' ? 'font-serif' : 'font-sans'}`}
               style={{ background: pdfBackground, ...previewStyle }}
             >
               {layout === 'classic' ? (
@@ -1463,65 +1534,223 @@ export default function CVMakerTunisie() {
                   </div>
                   <div className="p-8 grid grid-cols-12 gap-8 text-gray-800 flex-1">
                       <div className="col-span-8 space-y-8">
-                        {data.profile && <div><h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.profile}</h3><div className="text-sm leading-relaxed text-gray-600 text-justify">{renderRichText(data.profile)}</div></div>}
-                        {(data.experiences || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.exp}</h3>
-                            <div className="space-y-6">
-                              {(data.experiences || []).map((exp, idx) => (
-                                <div key={idx} className="break-inside-avoid">
-                                  <div className="flex justify-between items-baseline mb-1">
-                                    <h4 className="font-bold text-gray-800 text-lg">{exp.poste}</h4>
-                                    <span className="text-xs font-semibold text-gray-500 italic">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
-                                  </div>
-                                  <div className={`text-sm font-semibold ${currentTheme.accentText} mb-2`}>{exp.entreprise}, {exp.ville}</div>
-                                  <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{renderRichText(exp.description)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {(data.education || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-xl font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.edu}</h3>
-                            <div className="space-y-4">
-                              {(data.education || []).map((edu, idx) => (
-                                <div key={idx} className="break-inside-avoid">
-                                  <div className="flex justify-between items-baseline"><h4 className="font-bold text-gray-800">{edu.diplome}</h4><span className="text-sm font-bold text-gray-500">{formatDate(edu.annee)}</span></div>
-                                  <div className={`text-sm ${currentTheme.accentText}`}>{edu.ecole}, {edu.ville}</div>
-                                  {edu.details && <div className="text-xs text-gray-500 italic mt-1">{edu.details}</div>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <MainContentBody />
                       </div>
                       <div className="col-span-4 space-y-8 border-l border-gray-100 pl-8">
-                         {(data.skills || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.skills}</h3>
-                            <div className="flex flex-wrap gap-2">{(data.skills || []).map((skill, idx) => <span key={idx} className={`bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded`}>{typeof skill === 'string' ? skill : String(skill)}</span>)}</div>
-                          </div>
-                        )}
-                        {(data.languages || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.lang}</h3>
-                            <ul className="space-y-2 text-sm">{(data.languages || []).map((lang, idx) => <li key={idx} className="flex justify-between border-b border-gray-100 pb-1 last:border-0"><span className="font-semibold">{lang.lang}</span><span className="text-gray-500">{lang.level}</span></li>)}</ul>
-                          </div>
-                        )}
-                        {(data.hobbies || []).length > 0 && (
-                          <div>
-                            <h3 className={`text-lg font-bold border-b-2 ${currentTheme.primaryText} pb-2 mb-4 uppercase tracking-wider`}>{translations.preview.hobbies}</h3>
-                            <ul className="text-sm list-disc list-inside text-gray-600 space-y-1">{(data.hobbies || []).map((hobby, idx) => <li key={idx}>{typeof hobby === 'string' ? hobby : String(hobby)}</li>)}</ul>
-                          </div>
-                        )}
+                         <SidebarContent />
                       </div>
                   </div>
                 </div>
+              ) : layout === 'executive' ? (
+                // EXECUTIVE LAYOUT (Compact First)
+                <div className="w-full p-8 flex flex-col h-full min-h-[297mm]">
+                    <div className="border-b-2 border-gray-800 pb-4 mb-6">
+                        <h1 className="text-4xl font-bold uppercase tracking-tight text-gray-900 mb-1" style={{ fontSize: 'calc(2.5rem * var(--scale-factor))' }}>{data.personal.firstName} {data.personal.lastName}</h1>
+                        <h2 className="text-xl font-medium text-gray-600 tracking-wide uppercase mb-3" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{data.personal.title}</h2>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600" style={{ fontSize: 'calc(0.85rem * var(--scale-factor))' }}>
+                            {data.personal.phone && <span className="flex items-center gap-1"><Phone size={14}/> {data.personal.phone}</span>}
+                            {data.personal.email && <span className="flex items-center gap-1"><Mail size={14}/> {data.personal.email}</span>}
+                            {data.personal.address && <span className="flex items-center gap-1"><MapPin size={14}/> {data.personal.address}</span>}
+                            {data.personal.linkedin && <span className="flex items-center gap-1"><Linkedin size={14}/> {data.personal.linkedin}</span>}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                        {/* Profile Section */}
+                        {data.profile && (
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-2 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.profile}</h3>
+                                <div className="text-sm leading-normal text-gray-700 text-justify" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{renderRichText(data.profile)}</div>
+                            </div>
+                        )}
+
+                        {/* Skills Row */}
+                        {(data.skills || []).length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-2 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.skills}</h3>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                                    {(data.skills || []).map((skill, i) => (
+                                        <span key={i} className="font-medium">• {skill}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Experience */}
+                        {(data.experiences || []).length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.exp}</h3>
+                                <div className="space-y-4">
+                                    {(data.experiences || []).map((exp, idx) => (
+                                        <div key={idx}>
+                                            <div className="flex justify-between items-baseline mb-1">
+                                                <h4 className="font-bold text-gray-900 text-lg" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{exp.poste}</h4>
+                                                <span className="text-sm font-semibold text-gray-600">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
+                                            </div>
+                                            <div className="text-sm font-semibold text-gray-700 mb-1 italic">{exp.entreprise} | {exp.ville}</div>
+                                            <div className="text-sm text-gray-700 whitespace-pre-line leading-normal pl-2 border-l-2 border-gray-200">{renderRichText(exp.description)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Education */}
+                        {(data.education || []).length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.edu}</h3>
+                                <div className="space-y-3">
+                                    {(data.education || []).map((edu, idx) => (
+                                        <div key={idx} className="flex justify-between items-start">
+                                            <div>
+                                                <h4 className="font-bold text-gray-900">{edu.diplome}</h4>
+                                                <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
+                                            </div>
+                                            <div className="text-sm font-bold text-gray-500">{formatDate(edu.annee)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Custom Sections */}
+                        {(data.customSections || []).map((section) => (
+                            <div key={section.id}>
+                                <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{section.title}</h3>
+                                <div className="space-y-3">
+                                    {section.items.map((item) => (
+                                        <div key={item.id}>
+                                            <div className="flex justify-between font-bold text-gray-900">
+                                                <span>{item.title}</span>
+                                                <span className="text-sm font-normal text-gray-500">{item.date}</span>
+                                            </div>
+                                            <div className="text-sm italic text-gray-600 mb-1">{item.subtitle}</div>
+                                            <div className="text-sm text-gray-700">{renderRichText(item.description)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+              ) : layout === 'elegant' ? (
+                // ELEGANT LAYOUT (OPTIMIZED)
+                <div className="w-full flex flex-col h-full min-h-[297mm]">
+                    {/* Header */}
+                    <div className="bg-gray-50 text-center border-b border-gray-200" 
+                         style={{ padding: 'calc(1.5rem * var(--spacing-factor))' }}>
+                        <h1 className="font-serif font-bold text-gray-900 mb-2 tracking-tight" 
+                            style={{ fontSize: 'calc(2.25rem * var(--scale-factor))', lineHeight: 1.1 }}>
+                            {data.personal.firstName} {data.personal.lastName}
+                        </h1>
+                        <h2 className={`uppercase tracking-widest ${currentTheme.accentText} mb-3`} 
+                            style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>
+                            {data.personal.title}
+                        </h2>
+                        <div className="flex justify-center flex-wrap gap-4 text-sm text-gray-500 font-medium"
+                             style={{ fontSize: 'calc(0.8rem * var(--scale-factor))' }}>
+                            {data.personal.phone && <span>{data.personal.phone}</span>}
+                            {data.personal.email && <span>{data.personal.email}</span>}
+                            {data.personal.address && <span>{data.personal.address}</span>}
+                            {data.personal.linkedin && <span>{data.personal.linkedin}</span>}
+                        </div>
+                    </div>
+                    
+                    {/* Body */}
+                    <div className="flex flex-1" 
+                         style={{ padding: 'calc(2rem * var(--spacing-factor))', gap: 'calc(2rem * var(--spacing-factor))' }}>
+                        
+                        {/* Main Column */}
+                        <div className="w-2/3" style={{ display: 'flex', flexDirection: 'column', gap: 'calc(1.5rem * var(--spacing-factor))' }}>
+                            {data.profile && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-2 border-b pb-1" style={{ fontSize: 'calc(1.2rem * var(--scale-factor))' }}>{translations.preview.profile}</h3>
+                                    <div className="text-sm leading-normal text-gray-600">{renderRichText(data.profile)}</div>
+                                </div>
+                            )}
+                            
+                            {(data.experiences || []).length > 0 && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-3 border-b pb-1" style={{ fontSize: 'calc(1.2rem * var(--scale-factor))' }}>{translations.preview.exp}</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(1rem * var(--spacing-factor))' }}>
+                                        {(data.experiences || []).map((exp, idx) => (
+                                            <div key={idx}>
+                                                <div className="flex justify-between items-baseline mb-1">
+                                                    <h4 className="font-bold text-gray-900 text-lg" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{exp.poste}</h4>
+                                                    <span className="text-sm font-medium text-gray-500">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
+                                                </div>
+                                                <div className={`text-sm font-bold ${currentTheme.accentText} mb-1`}>{exp.entreprise}, {exp.ville}</div>
+                                                <div className="text-sm text-gray-600 leading-normal">{renderRichText(exp.description)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(data.education || []).length > 0 && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-3 border-b pb-1" style={{ fontSize: 'calc(1.2rem * var(--scale-factor))' }}>{translations.preview.edu}</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(0.75rem * var(--spacing-factor))' }}>
+                                        {(data.education || []).map((edu, idx) => (
+                                            <div key={idx}>
+                                                <div className="flex justify-between font-bold text-gray-900">
+                                                    <span>{edu.diplome}</span>
+                                                    <span className="text-sm text-gray-500 font-normal">{formatDate(edu.annee)}</span>
+                                                </div>
+                                                <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
+                                                {edu.details && <div className="text-sm text-gray-500 mt-1 italic">{edu.details}</div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Side Column */}
+                        <div className="w-1/3 border-l border-gray-100 pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 'calc(1.5rem * var(--spacing-factor))' }}>
+                            {(data.skills || []).length > 0 && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-2" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.skills}</h3>
+                                    <div className="flex flex-col gap-1">
+                                        {(data.skills || []).map((skill, i) => (
+                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1">{skill}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(data.languages || []).length > 0 && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-2" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.lang}</h3>
+                                    <div className="space-y-1">
+                                        {(data.languages || []).map((lang, i) => (
+                                            <div key={i} className="flex justify-between text-sm">
+                                                <span className="font-medium text-gray-700">{lang.lang}</span>
+                                                <span className="text-gray-500">{lang.level}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {(data.hobbies || []).length > 0 && (
+                                <div>
+                                    <h3 className="font-serif font-bold text-gray-800 mb-2" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.hobbies}</h3>
+                                    <div className="flex flex-col gap-1">
+                                        {(data.hobbies || []).map((hobby, i) => (
+                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1">{hobby}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
               ) : (
+                // SIDEBAR LAYOUTS (Default)
                 <>
                   <div className="w-[32%] text-white p-6 flex flex-col gap-6 print:text-white print:-webkit-print-color-adjust-exact"><SidebarContent /></div>
-                  <div className="w-[68%] p-8 text-gray-800"><MainContent /></div>
+                  <div className="w-[68%] p-8 text-gray-800"><MainContentBody /></div>
                 </>
               )}
             </div>
