@@ -37,8 +37,9 @@ import {
   Settings,  
   Minus,     
   MoveVertical,
-  Maximize, // New: For scale reset
-  Minimize  // New: For scale fit
+  ZoomIn,   // New: Zoom In
+  ZoomOut,  // New: Zoom Out
+  Maximize  // New: Fit Screen
 } from 'lucide-react';
 
 // --- Types & Themes ---
@@ -135,7 +136,8 @@ const t = {
         import: "Charger (JSON)",
         undo: "Annuler",
         redo: "Rétablir",
-        preview: "Aperçu"
+        preview: "Aperçu",
+        fit: "Adapter"
     },
     tabs: {
       personal: "Infos",
@@ -240,7 +242,8 @@ const t = {
         import: "Load Data (JSON)",
         undo: "Undo",
         redo: "Redo",
-        preview: "Preview"
+        preview: "Preview",
+        fit: "Fit Screen"
     },
     tabs: {
       personal: "Info",
@@ -526,7 +529,7 @@ export default function CVMakerTunisie() {
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
   const [history, setHistory] = useState<CVData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [previewScale, setPreviewScale] = useState(1); // Mobile Scale State
+  const [previewScale, setPreviewScale] = useState(1);
   
   const cvRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -556,21 +559,33 @@ export default function CVMakerTunisie() {
     }
   }, [data]);
 
-  // --- Auto Scale for Mobile Preview ---
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) { // On tablet/mobile
-        // Calculate scale: Screen width / A4 Width (approx 800px + margins)
-        const scale = (window.innerWidth - 32) / 800; // 32px for padding
-        setPreviewScale(Math.min(scale, 1));
-      } else {
-        setPreviewScale(1);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Initial call
-    return () => window.removeEventListener('resize', handleResize);
+  // --- Auto Scale Logic (Fix for Mobile) ---
+  const fitToScreen = useCallback(() => {
+    if (window.innerWidth < 1024) {
+      // 210mm is approx 794px. We add 40px buffer for margins.
+      const scale = (window.innerWidth - 40) / 794;
+      setPreviewScale(Math.min(scale, 1));
+    } else {
+      setPreviewScale(1);
+    }
   }, []);
+
+  // Recalculate scale when switching to preview on mobile
+  useEffect(() => {
+    if (mobileView === 'preview') {
+      fitToScreen();
+    }
+  }, [mobileView, fitToScreen]);
+
+  // Resize listener
+  useEffect(() => {
+    window.addEventListener('resize', fitToScreen);
+    return () => window.removeEventListener('resize', fitToScreen);
+  }, [fitToScreen]);
+
+  // Zoom handlers
+  const handleZoomIn = () => setPreviewScale(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setPreviewScale(prev => Math.max(prev - 0.1, 0.3));
 
   // --- UX Feature: Undo/Redo Logic ---
   useEffect(() => {
@@ -1415,7 +1430,16 @@ export default function CVMakerTunisie() {
 
         {/* --- RIGHT COLUMN: PREVIEW --- */}
         <div className={`w-full lg:w-2/3 bg-gray-500 p-4 lg:p-8 overflow-y-auto overflow-x-auto justify-center items-start order-2 lg:order-2 ${mobileView === 'editor' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="shadow-2xl shrink-0" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+          <div className="relative shadow-2xl shrink-0" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: '100px' }}>
+            
+            {/* New: Floating Zoom Controls */}
+            <div className="absolute -top-12 right-0 flex gap-2 bg-white p-2 rounded-lg shadow-md z-50">
+                <button onClick={handleZoomOut} className="p-1 hover:bg-gray-100 rounded" title="Zoom Out"><ZoomOut size={20} /></button>
+                <span className="text-xs font-bold self-center w-12 text-center">{Math.round(previewScale * 100)}%</span>
+                <button onClick={handleZoomIn} className="p-1 hover:bg-gray-100 rounded" title="Zoom In"><ZoomIn size={20} /></button>
+                <button onClick={fitToScreen} className="p-1 hover:bg-gray-100 rounded border-l ml-1 pl-2" title={translations.actions.fit}><Maximize size={20} /></button>
+            </div>
+
             <div 
               ref={cvRef}
               className={`w-[210mm] min-h-[297mm] flex ${layout === 'classic' ? 'flex-col' : (layout === 'sidebar-right' ? 'flex-row-reverse' : 'flex-row')} relative bg-white ${fontStyle === 'serif' ? 'font-serif' : 'font-sans'}`}
