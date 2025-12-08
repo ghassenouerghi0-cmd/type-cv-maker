@@ -374,91 +374,72 @@ type CVData = {
   }
 };
 
-// --- DATA UPDATED: GHASSEN OUERGHI ---
+// --- DATA: GENERIC DEFAULT TEMPLATE ---
 const initialData: CVData = {
   personal: {
-    firstName: "GHASSEN",
-    lastName: "OUERGHI",
-    title: "TECHNICIEN SUPÉRIEUR EN COMMERCE INTERNATIONAL",
-    email: "ghassen@live.ca",
-    phone: "+216 54082871",
-    address: "Tunis, Tunisie",
+    firstName: "Prénom",
+    lastName: "NOM",
+    title: "TITRE DU POSTE",
+    email: "email@exemple.com",
+    phone: "+123 45 678 900",
+    address: "Ville, Pays",
     license: "Permis B",
-    linkedin: "linkedin.com/in/ghassen-ouerghi",
+    linkedin: "linkedin.com/in/profil",
     photo: null
   },
-  profile: "Diplômé en Commerce International, je cherche à mettre en pratique mes connaissances en gestion des flux import-export et relations transitaires. Je possède aussi des bases en Distribution utiles pour l'organisation et le pointage des stocks.",
+  profile: "Ceci est un exemple de profil professionnel. Décrivez ici votre parcours, vos objectifs et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur. Expliquez ce que vous pouvez apporter à l'entreprise.",
   experiences: [
     {
       id: '1',
-      poste: 'Coordinateur Opérations & E-commerce',
-      entreprise: 'HKEYA TN',
-      ville: 'Tunis',
-      dateDebut: '2025-02',
-      dateFin: '2025-10',
-      description: "• Identifier et sourcer les prestataires logistiques et de transport externes.\n• Assurer le suivi rigoureux des stocks et organiser les fichiers fournisseurs (Logistique interne).\n• Coordination des flux de marchandises entre les achats et le service web.\n• Support Administratif : Gestion des inventaires et suivi des réclamations."
+      poste: 'Poste Actuel',
+      entreprise: 'Entreprise A',
+      ville: 'Ville',
+      dateDebut: '2023-01',
+      dateFin: '',
+      description: "• Tâche principale réalisée avec succès.\n• Gestion de projet et coordination d'équipe.\n• Utilisation d'outils spécifiques pour améliorer la productivité."
     },
     {
       id: '2',
-      poste: 'Stagiaire - Service Commerce Extérieur',
-      entreprise: 'Banque Zitouna',
-      ville: 'Département Étranger',
-      dateDebut: '2024-11',
-      dateFin: '2025-01',
-      description: "• Techniques de Paiement : Traitement des dossiers de Crédit Documentaire (Credoc).\n• Conformité : Vérification rigoureuse des documents d'import-export (Factures, B/L).\n• Opérations de Change : Initiation aux transferts SWIFT."
-    },
-    {
-      id: '3',
-      poste: 'Stagiaire - Assistant Transit & Douane',
-      entreprise: 'ABT Tunisie',
-      ville: 'Tunis',
-      dateDebut: '2024-08',
-      dateFin: '', 
-      description: "• Dédouanement : Préparation des déclarations douanières et classement tarifaire.\n• Transit International : Assistance au suivi des opérations d'import/export (Aérien & Maritime).\n• Logistique : Coordination des enlèvements de marchandises."
+      poste: 'Poste Précédent',
+      entreprise: 'Entreprise B',
+      ville: 'Ville',
+      dateDebut: '2020-01',
+      dateFin: '2022-12',
+      description: "• Développement de nouvelles fonctionnalités.\n• Collaboration avec les départements transverses.\n• Analyse des données et reporting."
     }
   ],
   education: [
     {
       id: '1',
-      diplome: 'BTS en Commerce International',
-      ecole: 'CSFMT GAMMARTH',
-      ville: 'Tunis',
-      annee: '2022-2025',
-      details: 'Spécialité Import/Export'
+      diplome: 'Master Spécialisé',
+      ecole: 'Université / École',
+      ville: 'Ville',
+      annee: '2022',
+      details: 'Mention Bien'
     },
     {
       id: '2',
-      diplome: 'BTP en Commerce de Distribution',
-      ecole: 'CSFMT GAMMARTH',
-      ville: 'Tunis',
-      annee: '2020-2022',
-      details: 'Gestion de stock'
-    },
-    {
-      id: '3',
-      diplome: 'Baccalauréat Économie et Gestion',
-      ecole: 'LYCÉE IBN ABI DHIAF',
-      ville: 'Marsa',
-      annee: '2019',
-      details: 'Marsa Essaada'
+      diplome: 'Licence',
+      ecole: 'Université',
+      ville: 'Ville',
+      annee: '2020',
+      details: ''
     }
   ],
   skills: [
-    'Gestion Import-Export',
-    'Incoterms & Dédouanement',
-    'Sourcing & Achats',
-    'Microsoft Excel (Avancé)',
-    'Négociation Commerciale',
-    'Outils Numériques',
-    'Gestion de Stock', 
-    'Transit International'
+    'Compétence 1',
+    'Compétence 2', 
+    'Logiciel X', 
+    'Langue Y', 
+    'Soft Skill 1',
+    'Gestion de projet'
   ],
   languages: [
-    { lang: 'Arabe', level: 'Langue Maternelle' },
-    { lang: 'Français', level: 'Avancé' },
-    { lang: 'Anglais', level: 'Courant' }
+    { lang: 'Langue A', level: 'Maternel' },
+    { lang: 'Langue B', level: 'Courant' },
+    { lang: 'Anglais', level: 'Technique' }
   ],
-  hobbies: ['Veille Technologique & IA', 'Actualité Internationale', 'Création de projets digitaux'],
+  hobbies: ['Centre d\'intérêt 1', 'Sport', 'Activité Artistique'],
   customSections: [],
   style: {
       fontSize: 1,
@@ -593,9 +574,9 @@ export default function CVMakerTunisie() {
     }
   }, []);
 
-  // --- AUTO-FIT LOGIC (IMPROVED RESET) ---
+  // --- AUTO-FIT LOGIC ---
   const handleAutoFit = () => {
-      // 1. If already fitted, reset to default
+      // 1. If active, reset to default (100%)
       if (isAutoFitted) {
           setData(prev => ({
               ...prev,
@@ -611,29 +592,25 @@ export default function CVMakerTunisie() {
       
       const MAX_HEIGHT_PX = 1122; // A4 height @ 96DPI
       
-      // We must temporarily reset style to get true height, 
-      // but React state update is async, so we do calculation in next tick
+      // Calculate height relative to current scale
+      // We need the unscaled height, so we divide by current scale
+      let currentHeight = element.scrollHeight / data.style.fontSize;
       
-      let currentHeight = element.scrollHeight;
-      
-      // Calculate reduction ratio
-      // If content is 1500px, ratio is 1122/1500 = 0.748
-      const ratio = MAX_HEIGHT_PX / currentHeight;
-      
-      if (ratio >= 1) {
+      if (currentHeight <= MAX_HEIGHT_PX) {
           alert("Le CV tient déjà sur une page !");
           return;
       }
 
-      // Aggressive shrinkage: reduce both font and spacing
-      // We use a slightly smaller ratio to ensure margins are safe
-      const newScale = Math.max(0.4, ratio * 0.95); 
+      // Calculate reduction ratio
+      const ratio = MAX_HEIGHT_PX / currentHeight;
+      // Shrink spacing AND font size proportionally with safety buffer
+      const newScale = Math.max(0.55, ratio * 0.96); 
 
       setData(prev => ({
           ...prev,
           style: {
               fontSize: newScale,
-              spacing: newScale // Dynamic spacing shrinks gaps
+              spacing: newScale // Apply to spacing as well!
           }
       }));
       setIsAutoFitted(true);
