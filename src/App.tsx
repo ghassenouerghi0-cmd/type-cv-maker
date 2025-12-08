@@ -513,7 +513,8 @@ export default function CVMakerTunisie() {
 
   const [data, setData] = useState<CVData>(() => {
     try {
-      const savedData = localStorage.getItem('cv_data_v2'); 
+      // CHANGED KEY TO FORCE RESET FOR ALL USERS
+      const savedData = localStorage.getItem('cv_data_v3'); 
       if (savedData) {
         return sanitizeData(JSON.parse(savedData));
       }
@@ -557,7 +558,8 @@ export default function CVMakerTunisie() {
   useEffect(() => {
     if (data) {
       const timer = setTimeout(() => {
-        localStorage.setItem('cv_data_v2', JSON.stringify(data)); 
+        // CHANGED KEY TO FORCE RESET FOR ALL USERS
+        localStorage.setItem('cv_data_v3', JSON.stringify(data)); 
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 2000);
       }, 1000);
@@ -574,7 +576,7 @@ export default function CVMakerTunisie() {
     }
   }, []);
 
-  // --- AUTO-FIT LOGIC ---
+  // --- AUTO-FIT LOGIC (FIXED) ---
   const handleAutoFit = () => {
       // 1. If active, reset to default (100%)
       if (isAutoFitted) {
@@ -593,7 +595,6 @@ export default function CVMakerTunisie() {
       const MAX_HEIGHT_PX = 1122; // A4 height @ 96DPI
       
       // Calculate height relative to current scale
-      // We need the unscaled height, so we divide by current scale
       let currentHeight = element.scrollHeight / data.style.fontSize;
       
       if (currentHeight <= MAX_HEIGHT_PX) {
