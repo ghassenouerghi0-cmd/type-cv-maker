@@ -106,7 +106,6 @@ const t = {
         redo: "Rétablir",
         preview: "Aperçu",
         fit: "Adapter",
-        score: "Score CV",
         autoFit: "Ajuster 1 Page",
         reset: "Réinitialiser"
     },
@@ -217,7 +216,6 @@ const t = {
         redo: "Redo",
         preview: "Preview",
         fit: "Fit Screen",
-        score: "CV Score",
         autoFit: "Auto-Fit Page",
         reset: "Reset"
     },
@@ -326,7 +324,6 @@ type Experience = {
   description: string;
 };
 
-// UPDATED: Added dateDebut/dateFin to Education
 type Education = {
   id: string;
   diplome: string;
@@ -390,7 +387,7 @@ const initialData: CVData = {
     linkedin: "linkedin.com/in/profil",
     photo: null
   },
-  profile: "Ceci est un exemple de profil professionnel. Décrivez ici votre parcours, vos objectifs et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur. Présentez vos points forts en quelques lignes.",
+  profile: "Ceci est un exemple de profil professionnel. Décrivez ici votre parcours, vos objectifs et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur.",
   experiences: [
     {
       id: '1',
@@ -399,7 +396,7 @@ const initialData: CVData = {
       ville: 'Ville',
       dateDebut: '2024-01',
       dateFin: '',
-      description: "• Décrivez vos missions principales et vos réalisations.\n• Utilisez des verbes d'action pour dynamiser votre CV."
+      description: "• Décrivez vos missions principales et vos réalisations.\n• Utilisez des verbes d'action."
     },
     {
       id: '2',
@@ -408,7 +405,7 @@ const initialData: CVData = {
       ville: 'Ville',
       dateDebut: '2022-01',
       dateFin: '2023-12',
-      description: "• Responsabilités clés et projets menés à bien.\n• Compétences développées durant cette période."
+      description: "• Responsabilités clés et projets menés à bien.\n• Compétences développées."
     }
   ],
   education: [
@@ -454,34 +451,6 @@ const initialData: CVData = {
   }
 };
 
-// --- ATS Analysis Logic ---
-const analyzeCV = (data: CVData) => {
-    let score = 100;
-    const feedback: { type: 'success' | 'error', msg: string }[] = [];
-
-    if (!data.personal.email || !data.personal.phone) {
-        score -= 10;
-        feedback.push({ type: 'error', msg: "Email ou téléphone manquant." });
-    }
-    if (!data.personal.linkedin) {
-        score -= 5;
-        feedback.push({ type: 'error', msg: "Ajoutez un lien LinkedIn pour plus de visibilité." });
-    }
-    if (!data.profile || data.profile.length < 50) {
-        score -= 10;
-        feedback.push({ type: 'error', msg: "Le profil est trop court. Visez 2-3 phrases." });
-    }
-    if (data.experiences.length === 0) {
-        score -= 20;
-        feedback.push({ type: 'error', msg: "Aucune expérience listée. Ajoutez au moins un stage ou projet." });
-    }
-    if (data.skills.length < 3) {
-        score -= 10;
-        feedback.push({ type: 'error', msg: "Ajoutez plus de compétences techniques (Hard Skills)." });
-    }
-    return { score: Math.max(0, score), feedback };
-};
-
 export default function CVMakerTunisie() {
   const sanitizeData = (parsed: any): CVData => {
     if (!parsed || typeof parsed !== 'object') return initialData;
@@ -520,7 +489,7 @@ export default function CVMakerTunisie() {
 
   const [data, setData] = useState<CVData>(() => {
     try {
-      const savedData = localStorage.getItem('cv_data_generic_v8'); // Force reset to V8 for generic data
+      const savedData = localStorage.getItem('cv_data_generic_v9'); 
       if (savedData) {
         return sanitizeData(JSON.parse(savedData));
       }
@@ -541,7 +510,6 @@ export default function CVMakerTunisie() {
   const [history, setHistory] = useState<CVData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [previewScale, setPreviewScale] = useState(1);
-  const [showScore, setShowScore] = useState(false);
    
   const [isAutoFitted, setIsAutoFitted] = useState(false);
     
@@ -563,7 +531,7 @@ export default function CVMakerTunisie() {
   useEffect(() => {
     if (data) {
       const timer = setTimeout(() => {
-        localStorage.setItem('cv_data_generic_v8', JSON.stringify(data)); 
+        localStorage.setItem('cv_data_generic_v9', JSON.stringify(data)); 
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 2000);
       }, 1000);
@@ -971,36 +939,6 @@ export default function CVMakerTunisie() {
     );
   };
 
-  const ScoreCard = ({ data, onClose }: { data: CVData, onClose: () => void }) => {
-      const { score, feedback } = analyzeCV(data);
-      return (
-          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-fadeIn">
-              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
-                  <div className="bg-blue-600 p-6 text-white text-center">
-                      <div className="text-5xl font-bold mb-2">{score}</div>
-                      <div className="text-blue-100 uppercase tracking-widest text-sm font-semibold">Score ATS</div>
-                  </div>
-                  <div className="p-6 max-h-[60vh] overflow-y-auto">
-                      <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><TrendingUp /> Analyse</h3>
-                      <div className="space-y-3">
-                          {feedback.map((item, idx) => (
-                              <div key={idx} className={`flex gap-3 p-3 rounded-lg text-sm ${item.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                                  <div className="shrink-0 mt-0.5">
-                                      {item.type === 'success' ? <CheckCircle size={16} /> : <XCircle size={16} />}
-                                  </div>
-                                  <span>{item.msg}</span>
-                              </div>
-                          ))}
-                      </div>
-                  </div>
-                  <div className="p-4 border-t bg-gray-50 flex justify-end">
-                      <button onClick={onClose} className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700">Fermer</button>
-                  </div>
-              </div>
-          </div>
-      );
-  };
-
   if (!data) return <div className="min-h-screen flex items-center justify-center bg-gray-100"><Loader className="animate-spin text-blue-600" size={32} /></div>;
 
   const translations = t[lang] || t['en'];
@@ -1029,9 +967,7 @@ export default function CVMakerTunisie() {
         </div>
       </div>
 
-      {/* REMOVED NAME AND TITLE FROM SIDEBAR AS REQUESTED */}
-
-      <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+      <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))', marginBottom: 'calc(1.5rem * var(--spacing-factor))' }}>
         <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.contact}</h3>
         {data.personal.phone && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Phone size={14 * data.style.fontSize} /></div><span>{data.personal.phone}</span></div>}
         {data.personal.email && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Mail size={14 * data.style.fontSize} /></div><span className="break-all text-xs" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{data.personal.email}</span></div>}
@@ -1041,7 +977,7 @@ export default function CVMakerTunisie() {
       </div>
 
       {(data.skills || []).length > 0 && (
-        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+        <div style={{ marginBottom: 'calc(1.5rem * var(--spacing-factor))' }}>
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.skills}</h3>
           <div className="flex flex-wrap gap-2" style={{ gap: 'calc(0.5rem * var(--spacing-factor))' }}>
             {(data.skills || []).map((skill, idx) => (
@@ -1054,7 +990,7 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.languages || []).length > 0 && (
-        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+        <div style={{ marginBottom: 'calc(1.5rem * var(--spacing-factor))' }}>
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.lang}</h3>
           <div className="flex flex-col" style={{ gap: 'calc(0.5rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.languages || []).map((lang, idx) => (
@@ -1068,7 +1004,7 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.hobbies || []).length > 0 && (
-        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+        <div style={{ marginBottom: 'calc(1.5rem * var(--spacing-factor))' }}>
           <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.hobbies}</h3>
           <ul className="list-disc list-inside text-slate-300" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.hobbies || []).map((hobby, idx) => (
@@ -1237,10 +1173,6 @@ export default function CVMakerTunisie() {
             <button onClick={handleRedo} disabled={historyIndex >= history.length - 1} className={`p-1.5 rounded-full hover:bg-blue-800 transition-colors ${historyIndex >= history.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}><Redo size={16} /></button>
           </div>
 
-          <button onClick={() => setShowScore(true)} className="ml-2 p-1.5 bg-green-500 rounded-full hover:bg-green-600 text-white transition-colors" title={translations.actions.score}>
-            <CheckCircle size={18} />
-          </button>
-
           {isSaved && <span className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-full animate-fade-in-out flex items-center gap-1 shrink-0 ml-1"><Save size={10} /> <span className="hidden sm:inline">{translations.saved}</span></span>}
         </div>
 
@@ -1259,8 +1191,6 @@ export default function CVMakerTunisie() {
           <button onClick={handleDownloadPDF} disabled={isDownloading} className={`bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors font-semibold shadow-sm text-xs md:text-sm ${isDownloading ? 'opacity-70 cursor-wait' : ''}`}>{isDownloading ? <Loader className="animate-spin" size={16} /> : <Download size={16} />}<span>{isDownloading ? '...' : translations.download}</span></button>
         </div>
       </header>
-
-      {showScore && <ScoreCard data={data} onClose={() => setShowScore(false)} />}
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         
@@ -1814,10 +1744,10 @@ export default function CVMakerTunisie() {
                 <>
                   <div className="w-[32%] text-white flex flex-col print:text-white print:-webkit-print-color-adjust-exact" style={{ padding: 'calc(1.5rem * var(--spacing-factor))', gap: 'calc(1.5rem * var(--spacing-factor))' }}><SidebarContent /></div>
                   <div className="w-[68%] text-gray-800" style={{ padding: 'calc(2rem * var(--spacing-factor))' }}>
-                        {/* FIXED: HEADER MOVED HERE FROM SIDEBAR TO MAIN CONTENT FOR VISIBILITY - NAME ON ONE LINE */}
+                        {/* FIXED: HEADER MOVED HERE FROM SIDEBAR TO MAIN CONTENT FOR VISIBILITY */}
                         <div className="mb-6">
                             <h1 className="font-bold text-gray-900 uppercase tracking-wider mb-2" style={{ fontSize: 'calc(2rem * var(--scale-factor))', lineHeight: 1.2 }}>
-                                {data.personal.firstName} {data.personal.lastName}
+                                {data.personal.firstName} <span className="ml-2">{data.personal.lastName}</span>
                             </h1>
                             <h2 className={`text-sm font-medium ${currentTheme.primaryText} uppercase tracking-widest`} style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>
                                 {data.personal.title}
