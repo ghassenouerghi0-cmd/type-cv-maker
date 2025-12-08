@@ -1,50 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Linkedin, 
-  Car, 
-  Plus, 
-  Trash2, 
-  Download, 
-  Printer,
-  FileText,
-  Loader,
-  AlertTriangle,
-  Palette,
-  Type,
-  LayoutTemplate,
-  AlignLeft,
-  AlignRight,
-  Columns,
-  Save,
-  Globe,
-  Facebook,
-  GripVertical, 
-  FileJson,
-  Upload,
-  Eye,        
-  EyeOff,     
-  Undo,       
-  Redo,       
-  Bold,       
-  List,
-  Layers,     
-  Settings,   
-  Minus,      
-  MoveVertical,
-  ZoomIn,    
-  ZoomOut,   
-  Maximize,
-  CheckCircle,
-  XCircle,
-  TrendingUp,
-  AlignJustify,
-  AlignCenter
+  Briefcase, GraduationCap, User, Mail, Phone, MapPin, Linkedin, 
+  Car, Plus, Trash2, Download, Printer, FileText, Loader, 
+  AlertTriangle, Palette, Type, LayoutTemplate, AlignLeft, 
+  AlignRight, Columns, Save, Globe, Facebook, GripVertical, 
+  FileJson, Upload, Eye, EyeOff, Undo, Redo, Bold, List, 
+  Layers, Settings, Minus, MoveVertical, ZoomIn, ZoomOut, 
+  Maximize, CheckCircle, XCircle, TrendingUp, AlignJustify, 
+  AlignCenter, Scissors, RefreshCcw
 } from 'lucide-react';
 
 // --- Types & Themes ---
@@ -143,7 +106,9 @@ const t = {
         redo: "Rétablir",
         preview: "Aperçu",
         fit: "Adapter",
-        score: "Score CV"
+        score: "Score CV",
+        autoFit: "Ajuster 1 Page",
+        reset: "Réinitialiser"
     },
     tabs: {
       personal: "Infos",
@@ -252,7 +217,9 @@ const t = {
         redo: "Redo",
         preview: "Preview",
         fit: "Fit Screen",
-        score: "CV Score"
+        score: "CV Score",
+        autoFit: "Auto-Fit Page",
+        reset: "Reset"
     },
     tabs: {
       personal: "Info",
@@ -407,71 +374,91 @@ type CVData = {
   }
 };
 
+// --- DATA UPDATED: GHASSEN OUERGHI ---
 const initialData: CVData = {
   personal: {
-    firstName: "Foulen",
-    lastName: "BEN FOULEN",
-    title: "TITRE DU POSTE VISÉ",
-    email: "email@exemple.com",
-    phone: "+216 XX XXX XXX",
+    firstName: "GHASSEN",
+    lastName: "OUERGHI",
+    title: "TECHNICIEN SUPÉRIEUR EN COMMERCE INTERNATIONAL",
+    email: "ghassen@live.ca",
+    phone: "+216 54082871",
     address: "Tunis, Tunisie",
     license: "Permis B",
-    linkedin: "linkedin.com/in/votre-profil",
+    linkedin: "linkedin.com/in/ghassen-ouerghi",
     photo: null
   },
-  profile: "Ceci est un exemple de profil. Décrivez ici votre parcours, vos objectifs professionnels et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur. Expliquez ce que vous pouvez apporter à l'entreprise.",
+  profile: "Diplômé en Commerce International, je cherche à mettre en pratique mes connaissances en gestion des flux import-export et relations transitaires. Je possède aussi des bases en Distribution utiles pour l'organisation et le pointage des stocks.",
   experiences: [
     {
       id: '1',
-      poste: 'Poste Actuel ou Récent',
-      entreprise: 'Nom de l\'Entreprise',
-      ville: 'Ville',
-      dateDebut: '2023-01',
-      dateFin: '',
-      description: "• Décrivez vos missions principales ici.\n• Mentionnez vos réalisations concrètes (chiffres, projets).\n• Utilisez des verbes d'action pour dynamiser la lecture."
+      poste: 'Coordinateur Opérations & E-commerce',
+      entreprise: 'HKEYA TN',
+      ville: 'Tunis',
+      dateDebut: '2025-02',
+      dateFin: '2025-10',
+      description: "• Identifier et sourcer les prestataires logistiques et de transport externes.\n• Assurer le suivi rigoureux des stocks et organiser les fichiers fournisseurs (Logistique interne).\n• Coordination des flux de marchandises entre les achats et le service web.\n• Support Administratif : Gestion des inventaires et suivi des réclamations."
     },
     {
       id: '2',
-      poste: 'Poste Précédent',
-      entreprise: 'Autre Entreprise',
-      ville: 'Ville',
-      dateDebut: '2020-01',
-      dateFin: '2022-12',
-      description: "• Gestion de projet et coordination d'équipe.\n• Développement de nouvelles stratégies.\n• Résolution de problèmes complexes."
+      poste: 'Stagiaire - Service Commerce Extérieur',
+      entreprise: 'Banque Zitouna',
+      ville: 'Département Étranger',
+      dateDebut: '2024-11',
+      dateFin: '2025-01',
+      description: "• Techniques de Paiement : Traitement des dossiers de Crédit Documentaire (Credoc).\n• Conformité : Vérification rigoureuse des documents d'import-export (Factures, B/L).\n• Opérations de Change : Initiation aux transferts SWIFT."
+    },
+    {
+      id: '3',
+      poste: 'Stagiaire - Assistant Transit & Douane',
+      entreprise: 'ABT Tunisie',
+      ville: 'Tunis',
+      dateDebut: '2024-08',
+      dateFin: '', 
+      description: "• Dédouanement : Préparation des déclarations douanières et classement tarifaire.\n• Transit International : Assistance au suivi des opérations d'import/export (Aérien & Maritime).\n• Logistique : Coordination des enlèvements de marchandises."
     }
   ],
   education: [
     {
       id: '1',
-      diplome: 'Master / Ingéniorat / Licence',
-      ecole: 'Université ou École',
-      ville: 'Ville',
-      annee: '2023',
-      details: 'Mention ou Spécialité'
+      diplome: 'BTS en Commerce International',
+      ecole: 'CSFMT GAMMARTH',
+      ville: 'Tunis',
+      annee: '2022-2025',
+      details: 'Spécialité Import/Export'
     },
     {
       id: '2',
-      diplome: 'Baccalauréat',
-      ecole: 'Lycée Secondaire',
-      ville: 'Ville',
-      annee: '2018',
-      details: 'Section (Maths, Sciences, Éco...)'
+      diplome: 'BTP en Commerce de Distribution',
+      ecole: 'CSFMT GAMMARTH',
+      ville: 'Tunis',
+      annee: '2020-2022',
+      details: 'Gestion de stock'
+    },
+    {
+      id: '3',
+      diplome: 'Baccalauréat Économie et Gestion',
+      ecole: 'LYCÉE IBN ABI DHIAF',
+      ville: 'Marsa',
+      annee: '2019',
+      details: 'Marsa Essaada'
     }
   ],
   skills: [
-    'Compétence Clé 1',
-    'Compétence Clé 2',
-    'Logiciel Professionnel',
-    'Langue Étrangère',
-    'Esprit d\'équipe',
-    'Gestion du temps'
+    'Gestion Import-Export',
+    'Incoterms & Dédouanement',
+    'Sourcing & Achats',
+    'Microsoft Excel (Avancé)',
+    'Négociation Commerciale',
+    'Outils Numériques',
+    'Gestion de Stock', 
+    'Transit International'
   ],
   languages: [
     { lang: 'Arabe', level: 'Langue Maternelle' },
-    { lang: 'Français', level: 'Courant' },
-    { lang: 'Anglais', level: 'Intermédiaire' }
+    { lang: 'Français', level: 'Avancé' },
+    { lang: 'Anglais', level: 'Courant' }
   ],
-  hobbies: ['Sport', 'Vie Associative', 'Lecture', 'Voyages'],
+  hobbies: ['Veille Technologique & IA', 'Actualité Internationale', 'Création de projets digitaux'],
   customSections: [],
   style: {
       fontSize: 1,
@@ -499,26 +486,11 @@ const analyzeCV = (data: CVData) => {
     if (data.experiences.length === 0) {
         score -= 20;
         feedback.push({ type: 'error', msg: "Aucune expérience listée. Ajoutez au moins un stage ou projet." });
-    } else {
-        const actionVerbs = ['géré', 'créé', 'développé', 'managed', 'created', 'developed', 'lead', 'dirigé', 'augmenté'];
-        const hasActionVerbs = data.experiences.some(exp => 
-            actionVerbs.some(verb => exp.description.toLowerCase().includes(verb))
-        );
-        if (!hasActionVerbs) {
-            score -= 10;
-            feedback.push({ type: 'error', msg: "Utilisez des verbes d'action (ex: Géré, Créé) dans vos expériences." });
-        } else {
-            feedback.push({ type: 'success', msg: "Bonne utilisation de verbes d'action !" });
-        }
     }
     if (data.skills.length < 3) {
         score -= 10;
         feedback.push({ type: 'error', msg: "Ajoutez plus de compétences techniques (Hard Skills)." });
     }
-    if (data.style.fontSize < 0.9) {
-        feedback.push({ type: 'error', msg: "La police est un peu petite. Attention à la lisibilité." });
-    }
-
     return { score: Math.max(0, score), feedback };
 };
 
@@ -582,7 +554,10 @@ export default function CVMakerTunisie() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [previewScale, setPreviewScale] = useState(1);
   const [showScore, setShowScore] = useState(false);
-   
+  
+  // State to track if Auto-Fit is active
+  const [isAutoFitted, setIsAutoFitted] = useState(false);
+    
   const cvRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<any>(null);
@@ -617,6 +592,52 @@ export default function CVMakerTunisie() {
       setPreviewScale(1);
     }
   }, []);
+
+  // --- AUTO-FIT LOGIC (IMPROVED RESET) ---
+  const handleAutoFit = () => {
+      // 1. If already fitted, reset to default
+      if (isAutoFitted) {
+          setData(prev => ({
+              ...prev,
+              style: { fontSize: 1, spacing: 1 }
+          }));
+          setIsAutoFitted(false);
+          return;
+      }
+
+      // 2. Perform Fit Logic
+      const element = cvRef.current;
+      if (!element) return;
+      
+      const MAX_HEIGHT_PX = 1122; // A4 height @ 96DPI
+      
+      // We must temporarily reset style to get true height, 
+      // but React state update is async, so we do calculation in next tick
+      
+      let currentHeight = element.scrollHeight;
+      
+      // Calculate reduction ratio
+      // If content is 1500px, ratio is 1122/1500 = 0.748
+      const ratio = MAX_HEIGHT_PX / currentHeight;
+      
+      if (ratio >= 1) {
+          alert("Le CV tient déjà sur une page !");
+          return;
+      }
+
+      // Aggressive shrinkage: reduce both font and spacing
+      // We use a slightly smaller ratio to ensure margins are safe
+      const newScale = Math.max(0.4, ratio * 0.95); 
+
+      setData(prev => ({
+          ...prev,
+          style: {
+              fontSize: newScale,
+              spacing: newScale // Dynamic spacing shrinks gaps
+          }
+      }));
+      setIsAutoFitted(true);
+  };
 
   useEffect(() => {
     if (mobileView === 'preview') {
@@ -882,7 +903,7 @@ export default function CVMakerTunisie() {
     _items.splice(dragOverIndex, 0, draggedItemContent);
 
     setData(prev => ({ ...prev, [section]: _items }));
-    
+     
     dragItem.current = null;
     dragOverItem.current = null;
   };
@@ -926,7 +947,7 @@ export default function CVMakerTunisie() {
   }: { 
     value: string, 
     onChange: (val: string) => void, 
-    placeholder?: string,
+    placeholder?: string, 
     rows?: number
   }) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -1008,32 +1029,35 @@ export default function CVMakerTunisie() {
   const SidebarContent = () => (
     <>
       <div className="flex justify-center mb-6">
-        <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white overflow-hidden flex items-center justify-center relative shadow-lg ${currentTheme.iconBg}`}>
+        <div 
+            className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white overflow-hidden flex items-center justify-center relative shadow-lg ${currentTheme.iconBg}`}
+            style={{ width: 'calc(10rem * var(--scale-factor))', height: 'calc(10rem * var(--scale-factor))' }}
+        >
           {data.personal.photo ? (
             <img src={data.personal.photo} alt="Profile" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-4xl text-slate-400 font-bold">
+            <span className="text-4xl text-slate-400 font-bold" style={{ fontSize: 'calc(2.25rem * var(--scale-factor))' }}>
               {(data.personal.firstName || ' ')[0]}{(data.personal.lastName || ' ')[0]}
             </span>
           )}
         </div>
       </div>
 
-      <div className="space-y-4 text-sm" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
-        <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.contact}</h3>
-        {data.personal.phone && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Phone size={14} /></div><span>{data.personal.phone}</span></div>}
-        {data.personal.email && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Mail size={14} /></div><span className="break-all text-xs">{data.personal.email}</span></div>}
-        {data.personal.address && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><MapPin size={14} /></div><span>{data.personal.address}</span></div>}
-        {data.personal.linkedin && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Linkedin size={14} /></div><span className="text-xs break-all">{data.personal.linkedin}</span></div>}
-        {data.personal.license && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`}><Car size={14} /></div><span>{data.personal.license}</span></div>}
+      <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+        <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.contact}</h3>
+        {data.personal.phone && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Phone size={14 * data.style.fontSize} /></div><span>{data.personal.phone}</span></div>}
+        {data.personal.email && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Mail size={14 * data.style.fontSize} /></div><span className="break-all text-xs" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{data.personal.email}</span></div>}
+        {data.personal.address && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><MapPin size={14 * data.style.fontSize} /></div><span>{data.personal.address}</span></div>}
+        {data.personal.linkedin && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Linkedin size={14 * data.style.fontSize} /></div><span className="text-xs break-all" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{data.personal.linkedin}</span></div>}
+        {data.personal.license && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Car size={14 * data.style.fontSize} /></div><span>{data.personal.license}</span></div>}
       </div>
 
       {(data.skills || []).length > 0 && (
-        <div className="space-y-3 mt-6">
-          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.skills}</h3>
-          <div className="flex flex-wrap gap-2">
+        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.skills}</h3>
+          <div className="flex flex-wrap gap-2" style={{ gap: 'calc(0.5rem * var(--spacing-factor))' }}>
             {(data.skills || []).map((skill, idx) => (
-              <span key={idx} className={`${currentTheme.iconBg} text-xs px-2 py-1 rounded`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
+              <span key={idx} className={`${currentTheme.iconBg} text-xs px-2 py-1 rounded`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))', padding: 'calc(0.25rem * var(--scale-factor)) calc(0.5rem * var(--scale-factor))' }}>
                 {typeof skill === 'string' ? skill : String(skill)}
               </span>
             ))}
@@ -1042,13 +1066,13 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.languages || []).length > 0 && (
-        <div className="space-y-3 mt-6">
-          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.lang}</h3>
-          <div className="space-y-2 text-sm" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.lang}</h3>
+          <div className="flex flex-col" style={{ gap: 'calc(0.5rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.languages || []).map((lang, idx) => (
               <div key={idx} className="flex flex-col">
                 <span className="font-semibold">{lang?.lang || ''}</span>
-                <span className="text-xs text-slate-300">{lang?.level || ''}</span>
+                <span className="text-xs text-slate-300" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{lang?.level || ''}</span>
               </div>
             ))}
           </div>
@@ -1056,9 +1080,9 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.hobbies || []).length > 0 && (
-        <div className="space-y-3 mt-6">
-          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200">{translations.preview.hobbies}</h3>
-          <ul className="text-sm list-disc list-inside text-slate-300" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+        <div style={{ marginTop: 'calc(1.5rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.hobbies}</h3>
+          <ul className="list-disc list-inside text-slate-300" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {(data.hobbies || []).map((hobby, idx) => (
               <li key={idx}>
                 {typeof hobby === 'string' ? hobby : String(hobby)}
@@ -1074,9 +1098,14 @@ export default function CVMakerTunisie() {
   const MainContentBody = () => (
     <>
       {data.profile && (
-        <div className="mb-8" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
-            <User className={currentTheme.accentText} size={20} /> {translations.preview.profile}
+        <div style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 flex items-center gap-2" 
+              style={{ 
+                  fontSize: 'calc(1.125rem * var(--scale-factor))', 
+                  marginBottom: 'calc(1rem * var(--spacing-factor))',
+                  paddingBottom: 'calc(0.25rem * var(--scale-factor))'
+              }}>
+            <User className={currentTheme.accentText} size={20 * data.style.fontSize} /> {translations.preview.profile}
           </h3>
           <div className="text-sm leading-relaxed text-gray-600 text-justify" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
             {renderRichText(data.profile)}
@@ -1085,24 +1114,29 @@ export default function CVMakerTunisie() {
       )}
 
       {(data.experiences || []).length > 0 && (
-        <div className="mb-8" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
-            <Briefcase className={currentTheme.accentText} size={20} /> {translations.preview.exp}
+        <div style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 flex items-center gap-2"
+              style={{ 
+                  fontSize: 'calc(1.125rem * var(--scale-factor))', 
+                  marginBottom: 'calc(1rem * var(--spacing-factor))',
+                  paddingBottom: 'calc(0.25rem * var(--scale-factor))'
+              }}>
+            <Briefcase className={currentTheme.accentText} size={20 * data.style.fontSize} /> {translations.preview.exp}
           </h3>
-          <div className="space-y-6" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
+          <div className="flex flex-col" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
             {(data.experiences || []).map((exp, idx) => (
-              <div key={idx} className="relative border-l-2 border-gray-200 pl-4 ml-1 break-inside-avoid">
-                <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white ${currentTheme.primaryText.replace('text-', 'bg-')}`}></div>
+              <div key={idx} className="relative border-l-2 border-gray-200 break-inside-avoid" style={{ paddingLeft: 'calc(1rem * var(--scale-factor))', marginLeft: 'calc(0.25rem * var(--scale-factor))' }}>
+                <div className={`absolute top-1 w-3 h-3 rounded-full border-2 border-white ${currentTheme.primaryText.replace('text-', 'bg-')}`} style={{ left: 'calc(-0.43rem)', width: 'calc(0.75rem * var(--scale-factor))', height: 'calc(0.75rem * var(--scale-factor))' }}></div>
                 <div className="flex justify-between items-baseline mb-1">
-                  <h4 className="font-bold text-gray-800 text-lg" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{exp.poste}</h4>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
+                  <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{exp.poste}</h4>
+                  <span className={`text-xs font-semibold rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))', padding: 'calc(0.125rem * var(--scale-factor)) calc(0.5rem * var(--scale-factor))' }}>
                     {formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}
                   </span>
                 </div>
-                <div className="text-sm font-semibold text-gray-600 mb-2" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                <div className="font-semibold text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>
                   {exp.entreprise} | {exp.ville}
                 </div>
-                <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                <div className="text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                   {renderRichText(exp.description)}
                 </div>
               </div>
@@ -1113,18 +1147,23 @@ export default function CVMakerTunisie() {
 
       {(data.education || []).length > 0 && (
         <div style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
-            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
-            <GraduationCap className={currentTheme.accentText} size={20} /> {translations.preview.edu}
+            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 flex items-center gap-2"
+              style={{ 
+                  fontSize: 'calc(1.125rem * var(--scale-factor))', 
+                  marginBottom: 'calc(1rem * var(--spacing-factor))',
+                  paddingBottom: 'calc(0.25rem * var(--scale-factor))'
+              }}>
+            <GraduationCap className={currentTheme.accentText} size={20 * data.style.fontSize} /> {translations.preview.edu}
           </h3>
-          <div className="space-y-4" style={{ gap: 'calc(1rem * var(--spacing-factor))' }}>
+          <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))' }}>
             {(data.education || []).map((edu, idx) => (
               <div key={idx} className="flex justify-between items-start break-inside-avoid">
                   <div>
                     <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>{edu.diplome}</h4>
-                    <div className="text-sm text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{edu.ecole}, {edu.ville}</div>
-                    {edu.details && <div className="text-xs text-gray-500 italic mt-1" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{edu.details}</div>}
+                    <div className="text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{edu.ecole}, {edu.ville}</div>
+                    {edu.details && <div className="text-gray-500 italic mt-1" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{edu.details}</div>}
                   </div>
-                  <div className="text-sm font-bold text-gray-500 whitespace-nowrap" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{formatDate(edu.annee)}</div>
+                  <div className="font-bold text-gray-500 whitespace-nowrap" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{formatDate(edu.annee)}</div>
               </div>
             ))}
           </div>
@@ -1134,26 +1173,31 @@ export default function CVMakerTunisie() {
       {/* RENDER CUSTOM SECTIONS */}
       {(data.customSections || []).map((section) => (
           <div key={section.id} className="break-inside-avoid" style={{ marginBottom: 'calc(2rem * var(--spacing-factor))' }}>
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 mb-4 pb-1 flex items-center gap-2" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>
-                <Layers className={currentTheme.accentText} size={20} /> {section.title}
+              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-gray-300 flex items-center gap-2"
+                  style={{ 
+                      fontSize: 'calc(1.125rem * var(--scale-factor))', 
+                      marginBottom: 'calc(1rem * var(--spacing-factor))',
+                      paddingBottom: 'calc(0.25rem * var(--scale-factor))'
+                  }}>
+                <Layers className={currentTheme.accentText} size={20 * data.style.fontSize} /> {section.title}
               </h3>
-              <div className="space-y-6" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
+              <div className="flex flex-col" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
                   {section.items.map((item) => (
                       <div key={item.id} className="break-inside-avoid">
                           <div className="flex justify-between items-baseline mb-1">
-                              <h4 className="font-bold text-gray-800 text-lg" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{item.title}</h4>
+                              <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{item.title}</h4>
                               {item.date && (
-                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>
+                                  <span className={`text-xs font-semibold rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))', padding: 'calc(0.125rem * var(--scale-factor)) calc(0.5rem * var(--scale-factor))' }}>
                                       {item.date}
                                   </span>
                               )}
                           </div>
                           {item.subtitle && (
-                              <div className="text-sm font-semibold text-gray-600 mb-2" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                              <div className="font-semibold text-gray-600 mb-2" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                                   {item.subtitle}
                               </div>
                           )}
-                          <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                          <div className="text-gray-600 whitespace-pre-line leading-relaxed" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
                               {renderRichText(item.description)}
                           </div>
                       </div>
@@ -1168,7 +1212,7 @@ export default function CVMakerTunisie() {
   if (layout === 'sidebar-right') {
     pdfBackground = `linear-gradient(to left, ${currentTheme.sidebarHex} 32%, #ffffff 32%)`;
   } else if (layout === 'classic' || layout === 'executive' || layout === 'elegant') {
-    pdfBackground = '#ffffff'; 
+    pdfBackground = '#ffffff'; 
   }
 
   return (
@@ -1293,7 +1337,7 @@ export default function CVMakerTunisie() {
                         </div>
                         <input 
                             type="range" 
-                            min="0.8" 
+                            min="0.5" 
                             max="1.3" 
                             step="0.05" 
                             value={data.style.fontSize} 
@@ -1310,7 +1354,7 @@ export default function CVMakerTunisie() {
                         </div>
                         <input 
                             type="range" 
-                            min="0.6" // LOWER MINIMUM
+                            min="0.5" 
                             max="1.6" 
                             step="0.1" 
                             value={data.style.spacing} 
@@ -1476,13 +1520,13 @@ export default function CVMakerTunisie() {
                             <div className="space-y-3">
                                 {section.items.map(item => (
                                     <div key={item.id} className="p-3 bg-white border rounded shadow-sm space-y-2 relative group">
-                                        <button onClick={() => removeCustomItem(section.id, item.id)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500"><Minus size={16} /></button>
-                                        <input className="w-full p-1 border-b text-sm font-semibold" placeholder={translations.custom.itemTitle} value={item.title} onChange={(e) => updateCustomItem(section.id, item.id, 'title', e.target.value)}/>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <input className="p-1 border-b text-xs" placeholder={translations.custom.itemSubtitle} value={item.subtitle} onChange={(e) => updateCustomItem(section.id, item.id, 'subtitle', e.target.value)}/>
-                                            <input className="p-1 border-b text-xs" placeholder={translations.custom.itemDate} value={item.date} onChange={(e) => updateCustomItem(section.id, item.id, 'date', e.target.value)}/>
-                                        </div>
-                                        <RichTextArea value={item.description} onChange={(val) => updateCustomItem(section.id, item.id, 'description', val)} placeholder="Description..." rows={2}/>
+                                            <button onClick={() => removeCustomItem(section.id, item.id)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500"><Minus size={16} /></button>
+                                            <input className="w-full p-1 border-b text-sm font-semibold" placeholder={translations.custom.itemTitle} value={item.title} onChange={(e) => updateCustomItem(section.id, item.id, 'title', e.target.value)}/>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input className="p-1 border-b text-xs" placeholder={translations.custom.itemSubtitle} value={item.subtitle} onChange={(e) => updateCustomItem(section.id, item.id, 'subtitle', e.target.value)}/>
+                                                <input className="p-1 border-b text-xs" placeholder={translations.custom.itemDate} value={item.date} onChange={(e) => updateCustomItem(section.id, item.id, 'date', e.target.value)}/>
+                                            </div>
+                                            <RichTextArea value={item.description} onChange={(val) => updateCustomItem(section.id, item.id, 'description', val)} placeholder="Description..." rows={2}/>
                                     </div>
                                 ))}
                                 <button onClick={() => addCustomItem(section.id)} className="w-full py-1.5 border border-dashed border-blue-300 text-blue-500 rounded text-sm hover:bg-blue-50 flex justify-center items-center gap-1"><Plus size={14} /> {translations.custom.addItem}</button>
@@ -1504,8 +1548,17 @@ export default function CVMakerTunisie() {
         <div className={`w-full lg:w-2/3 bg-gray-500 p-4 lg:p-8 overflow-y-auto overflow-x-auto justify-center items-start order-2 lg:order-2 ${mobileView === 'editor' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="relative shadow-2xl shrink-0" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: '100px' }}>
             
-            {/* New: Floating Zoom Controls */}
+            {/* Floating Zoom Controls */}
             <div className="absolute -top-12 right-0 flex gap-2 bg-white p-2 rounded-lg shadow-md z-50">
+                <button 
+                    onClick={handleAutoFit} 
+                    className={`p-1 hover:bg-gray-100 rounded font-bold flex items-center gap-1 ${isAutoFitted ? 'text-green-600 bg-green-50' : 'text-blue-600'}`} 
+                    title={isAutoFitted ? translations.actions.reset : translations.actions.autoFit}
+                >
+                    {isAutoFitted ? <RefreshCcw size={16} /> : <Scissors size={16} />}
+                    <span className="text-xs">{isAutoFitted ? translations.actions.reset : translations.actions.autoFit}</span>
+                </button>
+                <div className="w-px bg-gray-200 mx-1"></div>
                 <button onClick={handleZoomOut} className="p-1 hover:bg-gray-100 rounded" title="Zoom Out"><ZoomOut size={20} /></button>
                 <span className="text-xs font-bold self-center w-12 text-center">{Math.round(previewScale * 100)}%</span>
                 <button onClick={handleZoomIn} className="p-1 hover:bg-gray-100 rounded" title="Zoom In"><ZoomIn size={20} /></button>
@@ -1521,7 +1574,10 @@ export default function CVMakerTunisie() {
                 <div className="w-full flex flex-col h-full min-h-[297mm]">
                   <div className={`${currentTheme.headerBg || 'bg-slate-900'} text-white p-8 text-center print:text-white print:-webkit-print-color-adjust-exact`}>
                     <div className="flex justify-center mb-4">
-                      <div className={`w-32 h-32 rounded-full border-4 border-white overflow-hidden flex items-center justify-center relative shadow-lg bg-white/20`}>
+                      <div 
+                        className={`w-32 h-32 rounded-full border-4 border-white overflow-hidden flex items-center justify-center relative shadow-lg bg-white/20`}
+                        style={{ width: 'calc(8rem * var(--scale-factor))', height: 'calc(8rem * var(--scale-factor))' }}
+                      >
                         {data.personal.photo ? <img src={data.personal.photo} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-4xl text-white font-bold">{(data.personal.firstName || ' ')[0]}{(data.personal.lastName || ' ')[0]}</span>}
                       </div>
                     </div>
@@ -1538,14 +1594,14 @@ export default function CVMakerTunisie() {
                         <MainContentBody />
                       </div>
                       <div className="col-span-4 space-y-8 border-l border-gray-100 pl-8">
-                         <SidebarContent />
+                          <SidebarContent />
                       </div>
                   </div>
                 </div>
               ) : layout === 'executive' ? (
                 // EXECUTIVE LAYOUT (Compact First)
                 <div className="w-full p-8 flex flex-col h-full min-h-[297mm]">
-                    <div className="border-b-2 border-gray-800 pb-4 mb-6">
+                    <div className="border-b-2 border-gray-800 pb-4 mb-6" style={{ marginBottom: 'calc(1.5rem * var(--spacing-factor))', paddingBottom: 'calc(1rem * var(--spacing-factor))' }}>
                         <h1 className="text-4xl font-bold uppercase tracking-tight text-gray-900 mb-1" style={{ fontSize: 'calc(2.5rem * var(--scale-factor))' }}>{data.personal.firstName} {data.personal.lastName}</h1>
                         <h2 className="text-xl font-medium text-gray-600 tracking-wide uppercase mb-3" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{data.personal.title}</h2>
                         <div className="flex flex-wrap gap-4 text-sm text-gray-600" style={{ fontSize: 'calc(0.85rem * var(--scale-factor))' }}>
@@ -1556,7 +1612,7 @@ export default function CVMakerTunisie() {
                         </div>
                     </div>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-6" style={{ gap: 'calc(1.5rem * var(--spacing-factor))' }}>
                         {/* Profile Section */}
                         {data.profile && (
                             <div>
@@ -1569,7 +1625,7 @@ export default function CVMakerTunisie() {
                         {(data.skills || []).length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-2 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.skills}</h3>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))', gap: 'calc(0.5rem * var(--scale-factor))' }}>
                                     {(data.skills || []).map((skill, i) => (
                                         <span key={i} className="font-medium">• {skill}</span>
                                     ))}
@@ -1581,15 +1637,15 @@ export default function CVMakerTunisie() {
                         {(data.experiences || []).length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.exp}</h3>
-                                <div className="space-y-4">
+                                <div className="space-y-4" style={{ gap: 'calc(1rem * var(--spacing-factor))' }}>
                                     {(data.experiences || []).map((exp, idx) => (
                                         <div key={idx}>
                                             <div className="flex justify-between items-baseline mb-1">
                                                 <h4 className="font-bold text-gray-900 text-lg" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{exp.poste}</h4>
                                                 <span className="text-sm font-semibold text-gray-600">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
                                             </div>
-                                            <div className="text-sm font-semibold text-gray-700 mb-1 italic">{exp.entreprise} | {exp.ville}</div>
-                                            <div className="text-sm text-gray-700 whitespace-pre-line leading-normal pl-2 border-l-2 border-gray-200">{renderRichText(exp.description)}</div>
+                                            <div className="text-sm font-semibold text-gray-700 mb-1 italic" style={{ fontSize: 'calc(0.9rem * var(--scale-factor))' }}>{exp.entreprise} | {exp.ville}</div>
+                                            <div className="text-sm text-gray-700 whitespace-pre-line leading-normal pl-2 border-l-2 border-gray-200" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{renderRichText(exp.description)}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -1600,12 +1656,13 @@ export default function CVMakerTunisie() {
                         {(data.education || []).length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.edu}</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-3" style={{ gap: 'calc(0.75rem * var(--spacing-factor))' }}>
                                     {(data.education || []).map((edu, idx) => (
                                         <div key={idx} className="flex justify-between items-start">
                                             <div>
-                                                <h4 className="font-bold text-gray-900">{edu.diplome}</h4>
+                                                <h4 className="font-bold text-gray-900" style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>{edu.diplome}</h4>
                                                 <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
+                                                {edu.details && <div className="text-sm text-gray-500 mt-1 italic">{edu.details}</div>}
                                             </div>
                                             <div className="text-sm font-bold text-gray-500">{formatDate(edu.annee)}</div>
                                         </div>
@@ -1618,7 +1675,7 @@ export default function CVMakerTunisie() {
                         {(data.customSections || []).map((section) => (
                             <div key={section.id}>
                                 <h3 className="text-lg font-bold text-gray-900 uppercase tracking-widest border-b border-gray-300 mb-3 pb-1" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{section.title}</h3>
-                                <div className="space-y-3">
+                                <div className="space-y-3" style={{ gap: 'calc(0.75rem * var(--spacing-factor))' }}>
                                     {section.items.map((item) => (
                                         <div key={item.id}>
                                             <div className="flex justify-between font-bold text-gray-900">
@@ -1666,7 +1723,7 @@ export default function CVMakerTunisie() {
                             {data.profile && (
                                 <div>
                                     <h3 className="font-serif font-bold text-gray-800 mb-2 border-b pb-1" style={{ fontSize: 'calc(1.2rem * var(--scale-factor))' }}>{translations.preview.profile}</h3>
-                                    <div className="text-sm leading-normal text-gray-600">{renderRichText(data.profile)}</div>
+                                    <div className="text-sm leading-normal text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{renderRichText(data.profile)}</div>
                                 </div>
                             )}
                             
@@ -1680,8 +1737,8 @@ export default function CVMakerTunisie() {
                                                     <h4 className="font-bold text-gray-900 text-lg" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{exp.poste}</h4>
                                                     <span className="text-sm font-medium text-gray-500">{formatDate(exp.dateDebut)} — {exp.dateFin ? formatDate(exp.dateFin) : translations.exp.present}</span>
                                                 </div>
-                                                <div className={`text-sm font-bold ${currentTheme.accentText} mb-1`}>{exp.entreprise}, {exp.ville}</div>
-                                                <div className="text-sm text-gray-600 leading-normal">{renderRichText(exp.description)}</div>
+                                                <div className={`text-sm font-bold ${currentTheme.accentText} mb-1`} style={{ fontSize: 'calc(0.9rem * var(--scale-factor))' }}>{exp.entreprise}, {exp.ville}</div>
+                                                <div className="text-sm text-gray-600 leading-normal" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{renderRichText(exp.description)}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -1714,7 +1771,7 @@ export default function CVMakerTunisie() {
                                     <h3 className="font-serif font-bold text-gray-800 mb-2" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.skills}</h3>
                                     <div className="flex flex-col gap-1">
                                         {(data.skills || []).map((skill, i) => (
-                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1">{skill}</span>
+                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{skill}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -1739,7 +1796,7 @@ export default function CVMakerTunisie() {
                                     <h3 className="font-serif font-bold text-gray-800 mb-2" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{translations.preview.hobbies}</h3>
                                     <div className="flex flex-col gap-1">
                                         {(data.hobbies || []).map((hobby, i) => (
-                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1">{hobby}</span>
+                                            <span key={i} className="text-sm text-gray-600 border-b border-gray-100 pb-1" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{hobby}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -1750,15 +1807,15 @@ export default function CVMakerTunisie() {
               ) : (
                 // SIDEBAR LAYOUTS (Default)
                 <>
-                  <div className="w-[32%] text-white p-6 flex flex-col gap-6 print:text-white print:-webkit-print-color-adjust-exact"><SidebarContent /></div>
-                  <div className="w-[68%] p-8 text-gray-800"><MainContentBody /></div>
+                  <div className="w-[32%] text-white flex flex-col print:text-white print:-webkit-print-color-adjust-exact" style={{ padding: 'calc(1.5rem * var(--spacing-factor))', gap: 'calc(1.5rem * var(--spacing-factor))' }}><SidebarContent /></div>
+                  <div className="w-[68%] text-gray-800" style={{ padding: 'calc(2rem * var(--spacing-factor))' }}><MainContentBody /></div>
                 </>
               )}
             </div>
           </div>
         </div>
       </div>
-      <style>{`@media print { @page { margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } ::-webkit-scrollbar { display: none; } }`}</style>
+      <style>{`@media print { @page { margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; zoom: ${isAutoFitted ? data.style.fontSize : 1}; } ::-webkit-scrollbar { display: none; } }`}</style>
     </div>
   );
 }
