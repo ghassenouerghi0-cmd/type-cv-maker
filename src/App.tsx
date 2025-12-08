@@ -165,7 +165,7 @@ const t = {
       title: "Formation",
       degree: "Diplôme",
       school: "École",
-      year: "Année",
+      year: "Date / Année",
       city: "Ville",
       details: "Détails",
       add: "Ajouter +"
@@ -276,7 +276,7 @@ const t = {
       title: "Education",
       degree: "Degree",
       school: "School",
-      year: "Year",
+      year: "Date / Year",
       city: "City",
       details: "Details",
       add: "Add +"
@@ -326,12 +326,15 @@ type Experience = {
   description: string;
 };
 
+// UPDATED: Added dateDebut/dateFin to Education
 type Education = {
   id: string;
   diplome: string;
   ecole: string;
   ville: string;
-  annee: string;
+  annee: string; // Kept for legacy/free text if needed
+  dateDebut: string;
+  dateFin: string;
   details: string;
 };
 
@@ -374,7 +377,7 @@ type CVData = {
   }
 };
 
-// --- DATA: GENERIC DEFAULT TEMPLATE ---
+// --- DATA: GENERIC DEFAULT TEMPLATE (RESET) ---
 const initialData: CVData = {
   personal: {
     firstName: "Prénom",
@@ -387,59 +390,63 @@ const initialData: CVData = {
     linkedin: "linkedin.com/in/profil",
     photo: null
   },
-  profile: "Ceci est un exemple de profil professionnel. Décrivez ici votre parcours, vos objectifs et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur. Expliquez ce que vous pouvez apporter à l'entreprise.",
+  profile: "Ceci est un exemple de profil professionnel. Décrivez ici votre parcours, vos objectifs et vos atouts principaux. Soyez concis et percutant pour attirer l'attention du recruteur. Présentez vos points forts en quelques lignes.",
   experiences: [
     {
       id: '1',
       poste: 'Poste Actuel',
       entreprise: 'Entreprise A',
       ville: 'Ville',
-      dateDebut: '2023-01',
+      dateDebut: '2024-01',
       dateFin: '',
-      description: "• Tâche principale réalisée avec succès.\n• Gestion de projet et coordination d'équipe.\n• Utilisation d'outils spécifiques pour améliorer la productivité."
+      description: "• Décrivez vos missions principales et vos réalisations.\n• Utilisez des verbes d'action pour dynamiser votre CV."
     },
     {
       id: '2',
       poste: 'Poste Précédent',
       entreprise: 'Entreprise B',
       ville: 'Ville',
-      dateDebut: '2020-01',
-      dateFin: '2022-12',
-      description: "• Développement de nouvelles fonctionnalités.\n• Collaboration avec les départements transverses.\n• Analyse des données et reporting."
+      dateDebut: '2022-01',
+      dateFin: '2023-12',
+      description: "• Responsabilités clés et projets menés à bien.\n• Compétences développées durant cette période."
     }
   ],
   education: [
     {
       id: '1',
-      diplome: 'Master Spécialisé',
+      diplome: 'Diplôme Supérieur',
       ecole: 'Université / École',
       ville: 'Ville',
-      annee: '2022',
+      annee: '', 
+      dateDebut: '2020-09',
+      dateFin: '2023-06',
       details: 'Mention Bien'
     },
     {
       id: '2',
-      diplome: 'Licence',
-      ecole: 'Université',
+      diplome: 'Baccalauréat',
+      ecole: 'Lycée',
       ville: 'Ville',
-      annee: '2020',
-      details: ''
+      annee: '',
+      dateDebut: '2017-09',
+      dateFin: '2020-06',
+      details: 'Série Scientifique'
     }
   ],
   skills: [
     'Compétence 1',
-    'Compétence 2', 
-    'Logiciel X', 
-    'Langue Y', 
-    'Soft Skill 1',
-    'Gestion de projet'
+    'Compétence 2',
+    'Logiciel X',
+    'Gestion de projet',
+    'Communication',
+    'Travail d\'équipe'
   ],
   languages: [
     { lang: 'Langue A', level: 'Maternel' },
     { lang: 'Langue B', level: 'Courant' },
-    { lang: 'Anglais', level: 'Technique' }
+    { lang: 'Anglais', level: 'Intermédiaire' }
   ],
-  hobbies: ['Centre d\'intérêt 1', 'Sport', 'Activité Artistique'],
+  hobbies: ['Centre d\'intérêt 1', 'Sport', 'Voyages'],
   customSections: [],
   style: {
       fontSize: 1,
@@ -513,8 +520,7 @@ export default function CVMakerTunisie() {
 
   const [data, setData] = useState<CVData>(() => {
     try {
-      // CHANGED KEY TO FORCE RESET FOR ALL USERS
-      const savedData = localStorage.getItem('cv_data_v3'); 
+      const savedData = localStorage.getItem('cv_data_generic_v8'); // Force reset to V8 for generic data
       if (savedData) {
         return sanitizeData(JSON.parse(savedData));
       }
@@ -536,8 +542,7 @@ export default function CVMakerTunisie() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [previewScale, setPreviewScale] = useState(1);
   const [showScore, setShowScore] = useState(false);
-  
-  // State to track if Auto-Fit is active
+   
   const [isAutoFitted, setIsAutoFitted] = useState(false);
     
   const cvRef = useRef<HTMLDivElement>(null);
@@ -558,8 +563,7 @@ export default function CVMakerTunisie() {
   useEffect(() => {
     if (data) {
       const timer = setTimeout(() => {
-        // CHANGED KEY TO FORCE RESET FOR ALL USERS
-        localStorage.setItem('cv_data_v3', JSON.stringify(data)); 
+        localStorage.setItem('cv_data_generic_v8', JSON.stringify(data)); 
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 2000);
       }, 1000);
@@ -576,9 +580,7 @@ export default function CVMakerTunisie() {
     }
   }, []);
 
-  // --- AUTO-FIT LOGIC (FIXED) ---
   const handleAutoFit = () => {
-      // 1. If active, reset to default (100%)
       if (isAutoFitted) {
           setData(prev => ({
               ...prev,
@@ -588,13 +590,11 @@ export default function CVMakerTunisie() {
           return;
       }
 
-      // 2. Perform Fit Logic
       const element = cvRef.current;
       if (!element) return;
       
-      const MAX_HEIGHT_PX = 1122; // A4 height @ 96DPI
+      const MAX_HEIGHT_PX = 1122; 
       
-      // Calculate height relative to current scale
       let currentHeight = element.scrollHeight / data.style.fontSize;
       
       if (currentHeight <= MAX_HEIGHT_PX) {
@@ -602,16 +602,14 @@ export default function CVMakerTunisie() {
           return;
       }
 
-      // Calculate reduction ratio
       const ratio = MAX_HEIGHT_PX / currentHeight;
-      // Shrink spacing AND font size proportionally with safety buffer
       const newScale = Math.max(0.55, ratio * 0.96); 
 
       setData(prev => ({
           ...prev,
           style: {
               fontSize: newScale,
-              spacing: newScale // Apply to spacing as well!
+              spacing: newScale 
           }
       }));
       setIsAutoFitted(true);
@@ -694,13 +692,23 @@ export default function CVMakerTunisie() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    if (dateString.length === 4) return dateString;
+    if (dateString.length > 7 || dateString.includes(' - ') || dateString.toLowerCase().includes('present')) return dateString;
+    if (dateString.length === 4) return dateString; 
+
     try {
-      const [year, month] = dateString.split('-');
-      const months = lang === 'fr' 
-        ? ['Jan.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sep.', 'Oct.', 'Nov.', 'Déc.']
-        : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      if(month && year) return `${months[parseInt(month) - 1]} ${year}`;
+      const parts = dateString.split('-');
+      if (parts.length === 2) {
+          const [year, month] = parts;
+          if (year && month && !isNaN(parseInt(month))) {
+               const monthIndex = parseInt(month) - 1;
+               if (monthIndex >= 0 && monthIndex < 12) {
+                   const months = lang === 'fr' 
+                    ? ['Jan.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sep.', 'Oct.', 'Nov.', 'Déc.']
+                    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                   return `${months[monthIndex]} ${year}`;
+               }
+          }
+      }
       return dateString;
     } catch (e) {
       return dateString;
@@ -881,7 +889,7 @@ export default function CVMakerTunisie() {
     _items.splice(dragOverIndex, 0, draggedItemContent);
 
     setData(prev => ({ ...prev, [section]: _items }));
-     
+      
     dragItem.current = null;
     dragOverItem.current = null;
   };
@@ -1021,6 +1029,8 @@ export default function CVMakerTunisie() {
         </div>
       </div>
 
+      {/* REMOVED NAME AND TITLE FROM SIDEBAR AS REQUESTED */}
+
       <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))', fontSize: 'calc(0.875rem * var(--scale-factor))' }}>
         <h3 className="text-lg font-bold border-b border-white/20 pb-1 mb-2 uppercase tracking-wider text-slate-200" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))', marginBottom: 'calc(0.5rem * var(--spacing-factor))' }}>{translations.preview.contact}</h3>
         {data.personal.phone && <div className="flex items-center gap-3"><div className={`${currentTheme.iconBg} p-2 rounded-full shrink-0`} style={{ padding: 'calc(0.5rem * var(--scale-factor))' }}><Phone size={14 * data.style.fontSize} /></div><span>{data.personal.phone}</span></div>}
@@ -1135,13 +1145,19 @@ export default function CVMakerTunisie() {
           </h3>
           <div className="flex flex-col" style={{ gap: 'calc(1rem * var(--spacing-factor))' }}>
             {(data.education || []).map((edu, idx) => (
-              <div key={idx} className="flex justify-between items-start break-inside-avoid">
-                  <div>
+              <div key={idx} className="relative border-l-2 border-gray-200 break-inside-avoid" style={{ paddingLeft: 'calc(1rem * var(--scale-factor))', marginLeft: 'calc(0.25rem * var(--scale-factor))' }}>
+                  {/* Added Dot for consistency */}
+                  <div className={`absolute top-1 w-3 h-3 rounded-full border-2 border-white ${currentTheme.primaryText.replace('text-', 'bg-')}`} style={{ left: 'calc(-0.43rem)', width: 'calc(0.75rem * var(--scale-factor))', height: 'calc(0.75rem * var(--scale-factor))' }}></div>
+                  
+                  <div className="flex justify-between items-baseline mb-1">
                     <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>{edu.diplome}</h4>
-                    <div className="text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{edu.ecole}, {edu.ville}</div>
-                    {edu.details && <div className="text-gray-500 italic mt-1" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{edu.details}</div>}
+                    {/* UPDATED: USES BLUE PILL STYLE IDENTICAL TO EXPERIENCE */}
+                    <span className={`text-xs font-semibold rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))', padding: 'calc(0.125rem * var(--scale-factor)) calc(0.5rem * var(--scale-factor))' }}>
+                      {edu.annee ? edu.annee : `${formatDate(edu.dateDebut)} — ${formatDate(edu.dateFin)}`}
+                    </span>
                   </div>
-                  <div className="font-bold text-gray-500 whitespace-nowrap" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{formatDate(edu.annee)}</div>
+                  <div className="text-gray-600" style={{ fontSize: 'calc(0.875rem * var(--scale-factor))' }}>{edu.ecole}, {edu.ville}</div>
+                  {edu.details && <div className="text-gray-500 italic mt-1" style={{ fontSize: 'calc(0.75rem * var(--scale-factor))' }}>{edu.details}</div>}
               </div>
             ))}
           </div>
@@ -1166,7 +1182,7 @@ export default function CVMakerTunisie() {
                               <h4 className="font-bold text-gray-800" style={{ fontSize: 'calc(1.125rem * var(--scale-factor))' }}>{item.title}</h4>
                               {item.date && (
                                   <span className={`text-xs font-semibold rounded border whitespace-nowrap ${currentTheme.pillBg} ${currentTheme.accentText} ${currentTheme.pillBorder}`} style={{ fontSize: 'calc(0.75rem * var(--scale-factor))', padding: 'calc(0.125rem * var(--scale-factor)) calc(0.5rem * var(--scale-factor))' }}>
-                                      {item.date}
+                                          {item.date}
                                   </span>
                               )}
                           </div>
@@ -1190,7 +1206,7 @@ export default function CVMakerTunisie() {
   if (layout === 'sidebar-right') {
     pdfBackground = `linear-gradient(to left, ${currentTheme.sidebarHex} 32%, #ffffff 32%)`;
   } else if (layout === 'classic' || layout === 'executive' || layout === 'elegant') {
-    pdfBackground = '#ffffff'; 
+    pdfBackground = '#ffffff'; 
   }
 
   return (
@@ -1436,15 +1452,17 @@ export default function CVMakerTunisie() {
                     <div className="space-y-2">
                       <input placeholder={translations.edu.degree} value={edu.diplome} onChange={(e) => updateItem('education', edu.id, 'diplome', e.target.value)} className="w-full p-1 border rounded" />
                       <input placeholder={translations.edu.school} value={edu.ecole} onChange={(e) => updateItem('education', edu.id, 'ecole', e.target.value)} className="w-full p-1 border rounded" />
+                      {/* FIXED: Added Date Pickers here */}
                       <div className="grid grid-cols-2 gap-2">
-                          <input placeholder={translations.edu.year} value={edu.annee} onChange={(e) => updateItem('education', edu.id, 'annee', e.target.value)} className="p-1 border rounded" />
-                          <input placeholder={translations.edu.city} value={edu.ville} onChange={(e) => updateItem('education', edu.id, 'ville', e.target.value)} className="p-1 border rounded" />
+                          <input type="month" placeholder="Début" value={edu.dateDebut} onChange={(e) => updateItem('education', edu.id, 'dateDebut', e.target.value)} className="p-1 border rounded" />
+                          <input placeholder="Fin (ex: Présent)" value={edu.dateFin} onChange={(e) => updateItem('education', edu.id, 'dateFin', e.target.value)} className="p-1 border rounded" />
                       </div>
+                      <input placeholder={translations.edu.city} value={edu.ville} onChange={(e) => updateItem('education', edu.id, 'ville', e.target.value)} className="p-1 border rounded" />
                       <input placeholder={translations.edu.details} value={edu.details} onChange={(e) => updateItem('education', edu.id, 'details', e.target.value)} className="w-full p-1 border rounded" />
                     </div>
                   </div>
                 ))}
-                <button onClick={() => addItem('education', { id: Date.now().toString(), diplome: '', ecole: '', ville: '', annee: '', details: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2"><Plus size={16} /> {translations.edu.add}</button>
+                <button onClick={() => addItem('education', { id: Date.now().toString(), diplome: '', ecole: '', ville: '', annee: '', dateDebut: '', dateFin: '', details: '' })} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-blue-500 hover:text-blue-500 flex justify-center items-center gap-2"><Plus size={16} /> {translations.edu.add}</button>
               </div>
             )}
 
@@ -1580,7 +1598,10 @@ export default function CVMakerTunisie() {
                 // EXECUTIVE LAYOUT (Compact First)
                 <div className="w-full p-8 flex flex-col h-full min-h-[297mm]">
                     <div className="border-b-2 border-gray-800 pb-4 mb-6" style={{ marginBottom: 'calc(1.5rem * var(--spacing-factor))', paddingBottom: 'calc(1rem * var(--spacing-factor))' }}>
-                        <h1 className="text-4xl font-bold uppercase tracking-tight text-gray-900 mb-1" style={{ fontSize: 'calc(2.5rem * var(--scale-factor))' }}>{data.personal.firstName} {data.personal.lastName}</h1>
+                        {/* FIXED: Name on ONE LINE */}
+                        <h1 className="text-4xl font-bold uppercase tracking-tight text-gray-900 mb-1" style={{ fontSize: 'calc(2.5rem * var(--scale-factor))' }}>
+                            {data.personal.firstName} {data.personal.lastName}
+                        </h1>
                         <h2 className="text-xl font-medium text-gray-600 tracking-wide uppercase mb-3" style={{ fontSize: 'calc(1.1rem * var(--scale-factor))' }}>{data.personal.title}</h2>
                         <div className="flex flex-wrap gap-4 text-sm text-gray-600" style={{ fontSize: 'calc(0.85rem * var(--scale-factor))' }}>
                             {data.personal.phone && <span className="flex items-center gap-1"><Phone size={14}/> {data.personal.phone}</span>}
@@ -1642,7 +1663,10 @@ export default function CVMakerTunisie() {
                                                 <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
                                                 {edu.details && <div className="text-sm text-gray-500 mt-1 italic">{edu.details}</div>}
                                             </div>
-                                            <div className="text-sm font-bold text-gray-500">{formatDate(edu.annee)}</div>
+                                            {/* UPDATED: Uses start/end dates now like Experience */}
+                                            <div className="text-sm font-bold text-gray-500 whitespace-nowrap">
+                                                {edu.annee ? edu.annee : `${formatDate(edu.dateDebut)} - ${formatDate(edu.dateFin)}`}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1731,7 +1755,10 @@ export default function CVMakerTunisie() {
                                             <div key={idx}>
                                                 <div className="flex justify-between font-bold text-gray-900">
                                                     <span>{edu.diplome}</span>
-                                                    <span className="text-sm text-gray-500 font-normal">{formatDate(edu.annee)}</span>
+                                                    {/* UPDATED: Uses start/end dates now like Experience */}
+                                                    <span className="text-sm text-gray-500 font-normal">
+                                                        {edu.annee ? edu.annee : `${formatDate(edu.dateDebut)} - ${formatDate(edu.dateFin)}`}
+                                                    </span>
                                                 </div>
                                                 <div className="text-sm text-gray-600">{edu.ecole}, {edu.ville}</div>
                                                 {edu.details && <div className="text-sm text-gray-500 mt-1 italic">{edu.details}</div>}
@@ -1786,7 +1813,18 @@ export default function CVMakerTunisie() {
                 // SIDEBAR LAYOUTS (Default)
                 <>
                   <div className="w-[32%] text-white flex flex-col print:text-white print:-webkit-print-color-adjust-exact" style={{ padding: 'calc(1.5rem * var(--spacing-factor))', gap: 'calc(1.5rem * var(--spacing-factor))' }}><SidebarContent /></div>
-                  <div className="w-[68%] text-gray-800" style={{ padding: 'calc(2rem * var(--spacing-factor))' }}><MainContentBody /></div>
+                  <div className="w-[68%] text-gray-800" style={{ padding: 'calc(2rem * var(--spacing-factor))' }}>
+                        {/* FIXED: HEADER MOVED HERE FROM SIDEBAR TO MAIN CONTENT FOR VISIBILITY - NAME ON ONE LINE */}
+                        <div className="mb-6">
+                            <h1 className="font-bold text-gray-900 uppercase tracking-wider mb-2" style={{ fontSize: 'calc(2rem * var(--scale-factor))', lineHeight: 1.2 }}>
+                                {data.personal.firstName} {data.personal.lastName}
+                            </h1>
+                            <h2 className={`text-sm font-medium ${currentTheme.primaryText} uppercase tracking-widest`} style={{ fontSize: 'calc(1rem * var(--scale-factor))' }}>
+                                {data.personal.title}
+                            </h2>
+                        </div>
+                      <MainContentBody />
+                  </div>
                 </>
               )}
             </div>
