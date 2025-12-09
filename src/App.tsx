@@ -644,7 +644,7 @@ export default function CVMakerTunisie() {
   // 1. Hooks & State
   const [data, setData] = useState<CVData>(() => {
     try {
-      const savedData = localStorage.getItem('cv_data_generic_v15'); 
+      const savedData = localStorage.getItem('cv_data_generic_v16'); 
       if (savedData) {
         return {
             ...initialData,
@@ -841,7 +841,7 @@ export default function CVMakerTunisie() {
   useEffect(() => {
     if (data) {
       const timer = setTimeout(() => {
-        localStorage.setItem('cv_data_generic_v15', JSON.stringify(data)); 
+        localStorage.setItem('cv_data_generic_v16', JSON.stringify(data)); 
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 2000);
       }, 1000);
